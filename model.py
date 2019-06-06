@@ -35,7 +35,7 @@ class Model(object):
 
 class GAE(Model):
     def __init__(self, placeholders, num_features, num_nodes, args, **kwargs):
-        super(GCNModelAE, self).__init__(**kwargs)
+        super(GAE, self).__init__(**kwargs)
 
         self.inputs = placeholders['features']
         self.batch_size = args.batch_size
@@ -68,7 +68,7 @@ class GAE(Model):
 
 class VGAE(Model):
     def __init__(self, placeholders, num_features, num_nodes, args, **kwargs):
-        super(GCNModelVAE, self).__init__(**kwargs)
+        super(VGAE, self).__init__(**kwargs)
 
         self.inputs = placeholders['features']
         self.batch_size = args.batch_size

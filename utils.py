@@ -51,6 +51,7 @@ def visualize_latent_space(z_mean, labels, model_name):
         plt.clf()
 
 def get_random_batch_VGAE(batch_size, adj, adj_norm):
+    num_nodes = adj.shape[1]
     adj_idx = np.random.randint(adj.shape[0], size=batch_size)
     adj_norm_batch = adj_norm[adj_idx, :, :]
     adj_norm_batch = np.reshape(adj_norm_batch, [batch_size, num_nodes, num_nodes])

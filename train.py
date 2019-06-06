@@ -7,8 +7,8 @@ import numpy as np
 from utils import normalize_adj, construct_feed_dict_VGAE, \
                     get_random_batch_VGAE, get_random_batch_VAE
 
-def train_VGAE(model_name, data, session, saver, placeholders, model,
-                optimizer, args):
+def train_VGAE(model_name, data, sess, saver, placeholders, model,
+                opt, args):
 
     # Normalize adjacency matrix (i.e. D^(.5)AD^(.5))
     adj = data
@@ -49,9 +49,9 @@ def train_VGAE(model_name, data, session, saver, placeholders, model,
             if epoch % 100 == 0:
                 _, cost, kl_loss, rc_loss, constraint = outs
                 print("Epoch:", '%04d' % (epoch + 1), "train_loss=",
-                        "{:.5f}".format(cost), "kl_loss%s" % (kl_loss),
-                        "rc_loss%s" % (rc_loss), "constraint%s" % (constraint),
-                        "lambd", lambd, "constraint_ma", constraint_ma,
+                        "{:.5f}".format(cost), "kl_loss=%s" % (kl_loss),
+                        "rc_loss=%s" % (rc_loss), "constraint=%s" % (constraint),
+                        "lambd=%s" %(str(lambd)), "constraint_ma=%s" % (constraint_ma),
                         "time=", "{:.5f}".format(time.time() - t))
 
             # Save model every 500 epochs
@@ -59,12 +59,12 @@ def train_VGAE(model_name, data, session, saver, placeholders, model,
                 save_path = saver.save(sess, model_path)
                 print('saving checkpoint at',save_path)
 
-def train_VAE(model_name, data, session, saver, placeholders, model, optimizer,
+def train_VAE(model_name, data, sess, saver, placeholders, model, opt,
                 args):
 
     for epoch in range(args.epochs):
         t = time.time()
-        batch = get_random_batch(args.batch_size, data)
+        batch = get_random_batch_VAE(args.batch_size, data)
         if epoch == 0:
             [initial] = sess.run([opt.constraint], feed_dict={placeholders['inputs']: batch, placeholders['dropout']: args.dropout})
             lambd = 1.0
@@ -80,9 +80,9 @@ def train_VAE(model_name, data, session, saver, placeholders, model, optimizer,
             if epoch % 100 == 0:
                 _, cost, kl_loss, rc_loss, constraint = outs
                 print("Epoch:", '%04d' % (epoch + 1), "train_loss=",
-                        "{:.5f}".format(cost), "kl_loss%s" % (kl_loss),
-                        "rc_loss%s" % (rc_loss), "constraint%s" % (constraint),
-                        "lambd", lambd, "constraint_ma", constraint_ma,
+                        "{:.5f}".format(cost), "kl_loss=%s" % (kl_loss),
+                        "rc_loss=%s" % (rc_loss), "constraint=%s" % (constraint),
+                        "lambd=%s" %(str(lambd)), "constraint_ma=%s" % (constraint_ma),
                         "time=", "{:.5f}".format(time.time() - t))
 
             if epoch % 1000 == 0 and epoch != 0:

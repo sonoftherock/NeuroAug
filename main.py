@@ -35,7 +35,10 @@ print("Learning Rate: " + str(args.learning_rate))
 print("Hidden dimensions: " + str(args.hidden_dim_1), str(args.hidden_dim_2), str(args.hidden_dim_3))
 print("Augmentor model type: " + args.model_type)
 
-def define_placeholders(args, input_dim):
+def define_placeholders(args, data_shape):
+
+    input_dim = data_shape[0]
+    num_nodes, num_features = data_shape[1], data_shape[1]
 
     if args.model_type == 'VAE':
         placeholders = {
@@ -60,7 +63,10 @@ def define_placeholders(args, input_dim):
 
     return placeholders
 
-def define_model_and_optimizer(args, input_dim, placeholders):
+def define_model_and_optimizer(args, data_shape, placeholders):
+
+    input_dim = data_shape[0]
+    num_nodes, num_features = data_shape[1], data_shape[1]
 
     if args.model_type == 'VAE':
         model = VAE(placeholders, input_dim, args)
@@ -95,11 +101,10 @@ def main():
     # Load data and define placeholders
     print('Loading data from: ' + args.data_dir)
     data = np.load(args.data_dir)
-    input_dim = data.shape[0]
-    placeholders = define_placeholders(args, input_dim)
+    placeholders = define_placeholders(args, data.shape)
 
     # Create model and optimizer
-    model, opt = define_model_and_optimizer(args, input_dim, placeholders)
+    model, opt = define_model_and_optimizer(args, data.shape, placeholders)
     model_name = "%s_%s_%s_%s" % (args.model_type, str(args.hidden_dim_1),
                     str(args.hidden_dim_2), str(args.hidden_dim_3))
     model_path = "./models/%s.ckpt" % (model_name)
@@ -116,15 +121,15 @@ def main():
             saver.restore(sess, model_path)
 
         start_time = time.ctime(int(time.time()))
-        print("Training %s... Current Time: %s" % (model_name, str(start_time)))
+        print("Starting to train '%s'... \nStart Time: %s" % (model_name, str(start_time)))
 
         if args.model_type == 'VAE':
             train_VAE(model_name, data, session, saver, placeholders,
-                        model, optimizer)
+                        model, opt, args)
 
         elif args.model_type == 'VGAE':
             train_VGAE(model_name, data, session, saver, placeholders,
-                        model, optimizer)
+                        model, opt, args)
 
         else:
             print('beep beep model unspecified')
