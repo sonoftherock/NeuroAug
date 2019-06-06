@@ -1,0 +1,7 @@
+models/
+plots/
+*.pyc
+.ipynb_checkpoints/
+__pycache__/
+*swo
+*swp
