@@ -50,6 +50,7 @@ def visualize_latent_space_VAE(z_mean, labels, model_name):
     plt.legend()
     plt.savefig('./analysis/' + model_name + "/" + 'latent_space.png')
     plt.show()
+    plt.close()
 
 def visualize_latent_space_VGAE(z_mean, labels, model_name):
     plt.figure(figsize=(14,14))
@@ -61,8 +62,8 @@ def visualize_latent_space_VGAE(z_mean, labels, model_name):
                 plt.plot(z_mean[labels==0,k,i], z_mean[labels==0,k,j], 'o', label='Control', alpha=0.5)
                 plt.plot(z_mean[labels==1,k,i], z_mean[labels==1,k,j], 'o', label='Schizophrenic', alpha=0.5)
         plt.legend()
-        plt.savefig('./analaysis/' + model_name + '/latent_space_%i.png' %(k))
-        plt.clf()
+        plt.savefig('./analysis/' + model_name + '/latent_space_%i.png' %(k))
+        plt.close()
 
 def get_random_batch_VGAE(batch_size, adj, adj_norm):
     num_nodes = adj.shape[1]

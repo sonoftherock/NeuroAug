@@ -1,4 +1,5 @@
 import time
+import math
 import os
 import argparse
 
@@ -7,7 +8,11 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
 import tensorflow as tf
 import numpy as np
+import scipy.stats as sp
 from tensorflow.python import debug as tf_debug
+import matplotlib.pyplot as plt
+import matplotlib.colors as clr
+plt.switch_backend('agg')
 
 from define import define_placeholders, define_model
 from utils import visualize_triangular, visualize_matrix, \
@@ -16,9 +21,10 @@ from utils import visualize_triangular, visualize_matrix, \
 
 # Settings
 parser = argparse.ArgumentParser()
-parser.add_argument("data_dir", nargs='?', help="data directory", type=str, default="../data/BSNIP_left_full/original.npy")
+parser.add_argument("data_dir", help="data directory", type=str)
 parser.add_argument("model_type", help='select augmentor model type. \
                         Options: [VAE, VGAE, BrainNetCNN_VAE]', type=str)
+parser.add_argument("tol", help="tolerance for GECO procedure", type=float)
 parser.add_argument("--hidden_dim_1", type=int, default=512)
 parser.add_argument("--hidden_dim_2", type=int, default=256)
 parser.add_argument("--hidden_dim_3", type=int, default=10)
@@ -47,6 +53,7 @@ def analyze_VAE(args, placeholders, data, model, model_name, sess):
 def score_VAE(args, placeholders, data, model, model_name, sess):
     start, tot_rc_loss = 0, 0
     og_all, gen_all = [], []
+    input_dim = data.shape[0]
 
     # Get average reconstruction loss on training set
     while start + 32 < data.shape[1]:
@@ -63,7 +70,7 @@ def score_VAE(args, placeholders, data, model, model_name, sess):
     f.write("average reconstruction loss: %f\n" % avg_rc_loss.eval())
 
     for i in range(10):
-        batch, idx = get_random_batch(args.batch_size)
+        batch = get_random_batch_VAE(args.batch_size, data)
         og_all.append(batch)
 
     og = np.array(og_all).reshape(10, 32, -1)
@@ -121,8 +128,8 @@ def analyze():
 
     # Create model and optimizer
     model = define_model(args, data.shape, placeholders)
-    model_name = "%s_%s_%s_%s_%s" % (args.data_dir[11: -10], args.model_type, str(args.hidden_dim_1),
-                    str(args.hidden_dim_2), str(args.hidden_dim_3))
+    model_name = "%s_%s_%s_%s_%s_tol=%s" % (args.data_dir[8: -10], args.model_type, str(args.hidden_dim_1),
+                    str(args.hidden_dim_2), str(args.hidden_dim_3), str(args.tol))
     model_path = "../models/%s.ckpt" % (model_name)
 
     saver = tf.train.Saver()
@@ -135,6 +142,7 @@ def analyze():
 
         if args.model_type == 'VAE':
             analyze_VAE(args, placeholders, data, model, model_name, sess)
+            score_VAE(args, placeholders, data, model, model_name, sess)
 
         elif args.model_type == 'VGAE':
             train_VGAE(model_name, data, session, saver, placeholders,

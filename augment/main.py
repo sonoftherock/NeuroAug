@@ -14,9 +14,10 @@ from train import train_VAE, train_VGAE
 
 # Settings
 parser = argparse.ArgumentParser()
-parser.add_argument("data_dir", nargs='?', help="data directory", type=str, default="./data/BSNIP_left_full/original.npy")
+parser.add_argument("data_dir", help="Data directory", type=str)
 parser.add_argument("model_type", help='select augmentor model type. \
                         Options: [VAE, VGAE, BrainNetCNN_VAE]', type=str)
+parser.add_argument('tol', help='tolerance value for GECO training', type=float)
 parser.add_argument("--hidden_dim_1", type=int, default=512)
 parser.add_argument("--hidden_dim_2", type=int, default=256)
 parser.add_argument("--hidden_dim_3", type=int, default=10)
@@ -28,7 +29,6 @@ parser.add_argument('--debug', help='turn on tf debugger', action="store_true")
 parser.add_argument('--restore', help='restore or train new model', action="store_true")
 parser.add_argument('--lambd', help='lagrange multiplier on constraint (MSE)', default=1.0)
 parser.add_argument('--alpha', help='slowness of the constraint ma', default=0.99)
-parser.add_argument('--tol', help='tolerance value for GECO training', default=0.03)
 
 args = parser.parse_args()
 print("Learning Rate: " + str(args.learning_rate))
@@ -51,8 +51,8 @@ def main():
     # Create model and optimizer
     model = define_model(args, data.shape, placeholders)
     opt = define_optimizer(args, model, data.shape, placeholders)
-    model_name = "%s_%s_%s_%s_%s" % (args.data_dir[11:-10], args.model_type, str(args.hidden_dim_1),
-                    str(args.hidden_dim_2), str(args.hidden_dim_3))
+    model_name = "%s_%s_%s_%s_%s_tol=%s" % (args.data_dir[8:-10], args.model_type, str(args.hidden_dim_1),
+                    str(args.hidden_dim_2), str(args.hidden_dim_3), str(args.tol))
     model_path = "../models/%s.ckpt" % (model_name)
 
     saver = tf.train.Saver()

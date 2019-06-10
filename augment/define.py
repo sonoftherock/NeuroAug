@@ -58,7 +58,7 @@ def define_optimizer(args, model, data_shape, placeholders):
             opt = OptimizerVAE(reconstructions=tf.reshape(model.reconstructions, [-1]),
                                inputs=tf.reshape(placeholders['inputs'], [-1]),
                                model=model, learning_rate=args.learning_rate,
-                               lambd=placeholders['lambd'], tolerance=0.03)
+                               lambd=placeholders['lambd'], tolerance=args.tol)
 
     elif args.model_type == 'VGAE':
         with tf.name_scope('optimizer'):
@@ -66,7 +66,7 @@ def define_optimizer(args, model, data_shape, placeholders):
                                 labels=tf.reshape(placeholders['adj_orig'], [-1]),
                                 model=model, num_nodes=num_nodes,
                                 learning_rate=args.learning_rate,
-                                lambd=placeholders['lambd'], tolerance=0.1)
+                                lambd=placeholders['lambd'], tolerance=args.tol)
 
     else:
         opt = None, None
