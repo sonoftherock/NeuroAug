@@ -29,7 +29,7 @@ def visualize_triangular(batch, idx, model_name, name):
     tri[np.triu_indices(180,1)] = batch[idx]
     plt.imshow(tri, vmin=-1, vmax=1, cmap="RdBu")
     plt.colorbar()
-    plt.savefig("./plots/" + model_name + "/" + name)
+    plt.savefig("./analysis/" + model_name + "/" + name)
     plt.show()
     plt.clf()
 
@@ -37,7 +37,7 @@ def visualize_matrix(batch, idx, model_name, name):
     tri = batch[idx].reshape((180,180))
     plt.imshow(tri, vmin=-1, vmax=1, cmap="RdBu")
     plt.colorbar()
-    plt.savefig("./plots/" + model_name + "/" + name)
+    plt.savefig("./analysis/" + model_name + "/" + name)
     plt.clf()
 
 def visualize_latent_space_VAE(z_mean, labels, model_name):
@@ -48,7 +48,7 @@ def visualize_latent_space_VAE(z_mean, labels, model_name):
             plt.plot(z_mean[labels==0,i], z_mean[labels==0,j], 'o', label='Control', alpha=0.5)
             plt.plot(z_mean[labels==1,i], z_mean[labels==1,j], 'o', label='Schizophrenic', alpha=0.5)
     plt.legend()
-    plt.savefig('./plots/' + model_name + "/" + 'latent_space.png')
+    plt.savefig('./analysis/' + model_name + "/" + 'latent_space.png')
     plt.show()
 
 def visualize_latent_space_VGAE(z_mean, labels, model_name):
@@ -61,7 +61,7 @@ def visualize_latent_space_VGAE(z_mean, labels, model_name):
                 plt.plot(z_mean[labels==0,k,i], z_mean[labels==0,k,j], 'o', label='Control', alpha=0.5)
                 plt.plot(z_mean[labels==1,k,i], z_mean[labels==1,k,j], 'o', label='Schizophrenic', alpha=0.5)
         plt.legend()
-        plt.savefig('./plots/' + model_name + "/" + 'latent_space_%i.png' %(k))
+        plt.savefig('./analaysis/' + model_name + '/latent_space_%i.png' %(k))
         plt.clf()
 
 def get_random_batch_VGAE(batch_size, adj, adj_norm):
@@ -78,7 +78,12 @@ def get_random_batch_VAE(batch_size, data):
     batch = data[:,idx]
     return np.transpose(batch)
 
-def get_consecutive_batch(start, batch_size, adj, adj_norm):
+def get_consecutive_batch_VAE(start, batch_size, data):
+    idx = np.arange(start, start + batch_size)
+    batch = data[:,idx]
+    return np.transpose(batch)
+
+def get_consecutive_batch_VGAE(start, batch_size, adj, adj_norm):
     adj_idx = np.arange(start, start + batch_size)
     num_nodes = adj.shape[1]
     adj_norm_batch = adj_norm[adj_idx, :, :]

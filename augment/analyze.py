@@ -10,10 +10,9 @@ import numpy as np
 from tensorflow.python import debug as tf_debug
 
 from define import define_placeholders, define_model
-from train import train_VAE, train_VGAE
 from utils import visualize_triangular, visualize_matrix, \
                             visualize_latent_space_VAE, get_random_batch_VAE, \
-                            get_consecutive_batch
+                            get_consecutive_batch_VAE
 
 # Settings
 parser = argparse.ArgumentParser()
@@ -44,6 +43,69 @@ def analyze_VAE(args, placeholders, data, model, model_name, sess):
     # Visualize Latent Space. Label format =[control_bool, subject_bool]
     onehot = np.array([0 if label[0] == 1 else 1 for label in batch[:,-2:]])
     visualize_latent_space_VAE(z, onehot, model_name)
+
+def score_VAE(args, placeholders, data, model, model_name, sess):
+    start, tot_rc_loss = 0, 0
+    og_all, gen_all = [], []
+
+    # Get average reconstruction loss on training set
+    while start + 32 < data.shape[1]:
+        batch = get_consecutive_batch_VAE(start, args.batch_size, data)
+        feed_dict={placeholders['inputs']: batch}
+        [rc] = sess.run([model.reconstructions], feed_dict=feed_dict)
+
+        tot_rc_loss += tf.reduce_mean(tf.square(batch - rc))
+        start += args.batch_size
+    avg_rc_loss = tot_rc_loss / math.floor(data.shape[1]/args.batch_size)
+    f = open('./analysis/%s/score.txt' % (model_name), 'w')
+
+    print('Writing scores at ./analysis/%s/score.txt' % (model_name))
+    f.write("average reconstruction loss: %f\n" % avg_rc_loss.eval())
+
+    for i in range(10):
+        batch, idx = get_random_batch(args.batch_size)
+        og_all.append(batch)
+
+    og = np.array(og_all).reshape(10, 32, -1)
+    og = og.reshape(-1, input_dim)
+    og = og[:, :-2]
+    og_mean = np.mean(og, axis=0)
+    og_var = np.var(og, axis=0)
+
+    # TODO: Get pearson coefficients of first and second moments (Only for variational models) - make sure latent space is N(0,0.1)?
+    for i in range(10):
+        randoms = np.random.normal(0, 1, (args.batch_size, args.hidden_dim_3))
+        [gen] = sess.run([model.reconstructions], feed_dict={model.z: randoms})
+        gen = gen.reshape(args.batch_size, -1)
+        gen_all.append(gen)
+
+    gen = np.array(gen_all).reshape(10, 32, -1)
+    gen = gen.reshape(-1, input_dim)
+    gen = gen[:,:-2]
+
+    # Check one sample gen
+    visualize_triangular(gen, 0, model_name, 'generated')
+
+    gen_mean = np.mean(gen, axis=0)
+    gen_var = np.var(gen, axis=0)
+
+    plt.scatter(og_mean, gen_mean)
+    plt.title('Feature Mean')
+    plt.xlabel('original')
+    plt.ylabel('generated')
+    plt.savefig('./analysis/%s/mean.png'%(model_name))
+    plt.clf()
+
+    plt.scatter(og_var, gen_var)
+    plt.title('Feature Variance')
+    plt.xlabel('original')
+    plt.ylabel('generated')
+    plt.savefig('./analysis/%s/variance.png'%(model_name))
+    plt.clf()
+
+    f.write("Feature mean (180 * 180 features): %s\n" %(str(sp.pearsonr(og_mean, gen_mean))))
+    f.write("Feature Variance (180*180 features): %s\n" %(str(sp.pearsonr(og_var, gen_var))))
+    f.close()
 
 def analyze():
 
