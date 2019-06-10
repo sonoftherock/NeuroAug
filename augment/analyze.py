@@ -11,7 +11,7 @@ from tensorflow.python import debug as tf_debug
 
 from define import define_placeholders, define_model
 from train import train_VAE, train_VGAE
-from ..utils import visualize_triangular, visualize_matrix, \
+from utils import visualize_triangular, visualize_matrix, \
                             visualize_latent_space, get_random_batch, \
                             get_consecutive_batch
 

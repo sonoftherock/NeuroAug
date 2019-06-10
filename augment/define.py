@@ -1,5 +1,5 @@
-from ..optimizer import OptimizerVGAE, OptimizerVAE
-from ..model import VGAE, VAE
+from optimizer import OptimizerVGAE, OptimizerVAE
+from model import VGAE, VAE
 
 def define_placeholders(args, data_shape):
 

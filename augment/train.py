@@ -4,7 +4,7 @@ import argparse
 import tensorflow as tf
 import numpy as np
 
-from ..utils import normalize_adj, construct_feed_dict_VGAE, \
+from utils import normalize_adj, construct_feed_dict_VGAE, \
                     get_random_batch_VGAE, get_random_batch_VAE
 
 def train_VGAE(model_name, data, session, saver,
