@@ -36,7 +36,7 @@ def define_placeholders(args, data_shape):
 
 def define_model(args, data_shape, placeholders):
 
-    input_dim = 16110
+    input_dim = data.shape[0]
     num_nodes, num_features = data_shape[1], data_shape[1]
 
     if args.model_type == 'VAE':
@@ -52,7 +52,7 @@ def define_model(args, data_shape, placeholders):
 
 def define_optimizer(args, model, data_shape, placeholders):
 
-    input_dim = 16110
+    input_dim = data.shape[0]
     num_nodes, num_features = data_shape[1], data_shape[1]
 
     if args.model_type == 'VAE':

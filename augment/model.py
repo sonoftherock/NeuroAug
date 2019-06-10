@@ -139,7 +139,7 @@ class VAE(Model):
                                   logging=self.logging)(self.decoder2)
 
         self.preds = HiddenLayer(input_dim=args.hidden_dim_1,
-                                  output_dim= input_dim - 16110,
+                                  output_dim= self.input_dim - 16110,
                                   act=lambda x: x,
                                   dropout=self.dropout,
                                   logging=self.logging)(self.decoder2)
