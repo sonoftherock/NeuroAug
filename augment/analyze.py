@@ -30,7 +30,7 @@ args = parser.parse_args()
 print("Hidden dimensions: " + str(args.hidden_dim_1), str(args.hidden_dim_2), str(args.hidden_dim_3))
 print("Augmentor model type: " + args.model_type)
 
-def analyze_VAE(args, data, model):
+def analyze_VAE(args, placeholders, data, model, model_name, sess):
     batch = get_random_batch_VAE(args.batch_size, data)
     feed_dict={placeholders['inputs']: batch}
     [rc] = sess.run([model.reconstructions], feed_dict=feed_dict)
@@ -42,7 +42,7 @@ def analyze_VAE(args, data, model):
         visualize_triangular(rc, i, model_name, 'reconstruction_' + str(i))
 
     # Visualize Latent Space. Label format =[control_bool, subject_bool]
-    onehot = np.array([0 if label[0] == 1 else 1 for label in batch[-2:]])
+    onehot = np.array([0 if label[0] == 1 else 1 for label in batch[:,-2:]])
     visualize_latent_space_VAE(z, onehot, model_name)
 
 def analyze():
@@ -72,7 +72,7 @@ def analyze():
         print("Analyzing '%s'... \nStart Time: %s" % (model_name, str(start_time)))
 
         if args.model_type == 'VAE':
-            analyze_VAE(args, data, model, model_name)
+            analyze_VAE(args, placeholders, data, model, model_name, sess)
 
         elif args.model_type == 'VGAE':
             train_VGAE(model_name, data, session, saver, placeholders,
