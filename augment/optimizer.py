@@ -1,8 +1,11 @@
 import tensorflow as tf
 
 class OptimizerVAE(object):
-    def __init__(self, reconstructions, inputs, model, learning_rate, lambd, tolerance):
+    def __init__(self, reconstructions, inputs, preds, labels, model,
+                    learning_rate, lambd, tolerance):
         self.reconstructions = reconstructions
+        self.preds = preds
+        self.labels = labels
         self.inputs = inputs
 
         # Lagrange multiplier and slowness of the "constraint moving average"
@@ -10,8 +13,11 @@ class OptimizerVAE(object):
         # nonlinear autoencoder on training set.
         self.tolerance = tolerance
 
+        self.fc_rc_loss = tf.reduce_mean(tf.square(self.inputs - self.reconstructions))
+        self.label_rc_loss = tf.reduce_mean(tf.square(self.labels - self.preds))
+        self.rc_loss = self.fc_rc_loss + self.label_rc_loss
+
         # constraint refers to MSE reconstruction loss
-        self.rc_loss = tf.reduce_mean(tf.square(self.inputs - self.reconstructions))
         self.constraint = self.rc_loss - tf.square(self.tolerance)
         self.optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
 
@@ -62,7 +68,7 @@ class OptimizerVAEwithFeatures(object):
         self.cost = lambd * self.rc_loss + self.kl + self.cross_entropy
         self.opt_op = self.optimizer.minimize(self.cost)
         self.grads_vars = self.optimizer.compute_gradients(self.cost)
-        
+
 class OptimizerVGAE(object):
     def __init__(self, preds, labels, model, num_nodes, learning_rate, lambd, tolerance):
         self.preds_sub = preds

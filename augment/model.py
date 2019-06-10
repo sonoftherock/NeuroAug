@@ -33,39 +33,6 @@ class Model(object):
     def predict(self):
         pass
 
-class GAE(Model):
-    def __init__(self, placeholders, num_features, num_nodes, args, **kwargs):
-        super(GAE, self).__init__(**kwargs)
-
-        self.inputs = placeholders['features']
-        self.batch_size = args.batch_size
-        self.input_dim = num_features
-        self.n_samples = num_nodes
-        self.adj = placeholders['adj_orig']
-        self.dropout = placeholders['dropout']
-        self.build(args)
-
-    def _build(self, args):
-        self.hidden1 = GraphConvolution(batch_size=self.batch_size,
-                                              input_dim=self.input_dim,
-                                              output_dim=args.hidden_dim_1,
-                                              adj=self.adj,
-                                              act=tf.nn.relu,
-                                              dropout=self.dropout,
-                                              logging=self.logging)(self.inputs)
-
-        self.z_mean = GraphConvolution(batch_size=self.batch_size,
-                                       input_dim=args.hidden_dim_1,
-                                       output_dim=args.hidden_dim_2,
-                                       adj=self.adj,
-                                       act=lambda x: x,
-                                       dropout=self.dropout,
-                                       logging=self.logging)(self.hidden1)
-
-        self.reconstructions = InnerProductDecoder(input_dim=args.hidden_dim_2,
-                                      act= tf.nn.tanh,
-                                      logging=self.logging)(self.z_mean)
-
 class VGAE(Model):
     def __init__(self, placeholders, num_features, num_nodes, args, **kwargs):
         super(VGAE, self).__init__(**kwargs)
@@ -166,8 +133,14 @@ class VAE(Model):
                                   logging=self.logging)(self.decoder1)
 
         self.reconstructions = HiddenLayer(input_dim=args.hidden_dim_1,
-                                  output_dim=self.input_dim,
+                                  output_dim=16110,
                                   act=tf.nn.tanh,
+                                  dropout=self.dropout,
+                                  logging=self.logging)(self.decoder2)
+
+        self.preds = HiddenLayer(input_dim=args.hidden_dim_1,
+                                  output_dim= input_dim - 16110,
+                                  act=lambda x: x,
                                   dropout=self.dropout,
                                   logging=self.logging)(self.decoder2)
 
@@ -232,52 +205,6 @@ class VAEwithFeatures(Model):
                           act=lambda x: x,
                           dropout=self.dropout,
                           logging=self.logging)(self.decoder2)
-
-class AE(Model):
-    def __init__(self, placeholders, num_features, args, **kwargs):
-        super(AE, self).__init__(**kwargs)
-        self.inputs = placeholders['inputs']
-        self.batch_size = args.batch_size
-        self.input_dim = num_features
-        self.dropout = placeholders['dropout']
-        self.build(args)
-
-    def _build(self, args):
-        self.encoder1 = HiddenLayer(input_dim=self.input_dim,
-                                              output_dim=args.hidden_dim_1,
-                                              act=tf.nn.relu,
-                                              dropout=self.dropout,
-                                              logging=self.logging)(self.inputs)
-
-        self.encoder2 = HiddenLayer(input_dim=args.hidden_dim_1,
-                                       output_dim=args.hidden_dim_2,
-                                       act=tf.nn.relu,
-                                       dropout=self.dropout,
-                                       logging=self.logging)(self.encoder1)
-
-        self.z = HiddenLayer(input_dim=args.hidden_dim_2,
-                                          output_dim=args.hidden_dim_3,
-                                          act=lambda x: x,
-                                          dropout=self.dropout,
-                                          logging=self.logging)(self.encoder2)
-
-        self.decoder1 = HiddenLayer(input_dim=args.hidden_dim_3,
-                                          output_dim=args.hidden_dim_2,
-                                          act=tf.nn.relu,
-                                          dropout=self.dropout,
-                                          logging=self.logging)(self.z)
-
-        self.decoder2 = HiddenLayer(input_dim=args.hidden_dim_2,
-                                  output_dim=args.hidden_dim_1,
-                                  act=tf.nn.relu,
-                                  dropout=self.dropout,
-                                  logging=self.logging)(self.decoder1)
-
-        self.reconstructions = HiddenLayer(input_dim=args.hidden_dim_1,
-                                  output_dim=self.input_dim,
-                                  act=tf.nn.tanh,
-                                  dropout=self.dropout,
-                                  logging=self.logging)(self.decoder2)
 
 class BinaryClassifier(Model):
     def __init__(self, placeholders, num_features, args, **kwargs):

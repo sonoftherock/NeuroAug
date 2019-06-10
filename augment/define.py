@@ -6,12 +6,14 @@ from model import VGAE, VAE
 
 def define_placeholders(args, data_shape):
 
-    input_dim = data_shape[0]
+    input_dim = 16110
+    label_dim = data_shape[0] - input_dim
     num_nodes, num_features = data_shape[1], data_shape[1]
 
     if args.model_type == 'VAE':
         placeholders = {
             'inputs': tf.placeholder(tf.float32, [args.batch_size, input_dim]),
+            'labels': tf.placeholder(tf.float32, [args.batch_size, label_dim]),
             'dropout': tf.placeholder_with_default(0., shape=()),
             'lambd': tf.placeholder(tf.float32, []),
         }
@@ -34,7 +36,7 @@ def define_placeholders(args, data_shape):
 
 def define_model(args, data_shape, placeholders):
 
-    input_dim = data_shape[0]
+    input_dim = 16110
     num_nodes, num_features = data_shape[1], data_shape[1]
 
     if args.model_type == 'VAE':
@@ -50,14 +52,16 @@ def define_model(args, data_shape, placeholders):
 
 def define_optimizer(args, model, data_shape, placeholders):
 
-    input_dim = data_shape[0]
+    input_dim = 16110
     num_nodes, num_features = data_shape[1], data_shape[1]
 
     if args.model_type == 'VAE':
         with tf.name_scope('optimizer'):
             opt = OptimizerVAE(reconstructions=tf.reshape(model.reconstructions, [-1]),
                                inputs=tf.reshape(placeholders['inputs'], [-1]),
-                               model=model, learning_rate=args.learning_rate,
+                               labels=tf.reshape(placeholders['labels'], [-1]),
+                               preds=model.preds, model=model,
+                               learning_rate=args.learning_rate,
                                lambd=placeholders['lambd'], tolerance=args.tol)
 
     elif args.model_type == 'VGAE':
