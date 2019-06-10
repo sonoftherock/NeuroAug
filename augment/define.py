@@ -1,3 +1,6 @@
+import tensorflow as tf
+import numpy as np
+
 from optimizer import OptimizerVGAE, OptimizerVAE
 from model import VGAE, VAE
 
@@ -45,7 +48,7 @@ def define_model(args, data_shape, placeholders):
 
     return model
 
-def define_optimizer(args, data_shape, placeholders):
+def define_optimizer(args, model, data_shape, placeholders):
 
     input_dim = data_shape[0]
     num_nodes, num_features = data_shape[1], data_shape[1]

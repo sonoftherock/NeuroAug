@@ -50,7 +50,7 @@ def main():
 
     # Create model and optimizer
     model = define_model(args, data.shape, placeholders)
-    opt = define_optimizer(args, data.shape, placeholders)
+    opt = define_optimizer(args, model, data.shape, placeholders)
     model_name = "%s_%s_%s_%s" % (args.model_type, str(args.hidden_dim_1),
                     str(args.hidden_dim_2), str(args.hidden_dim_3))
     model_path = "./models/%s.ckpt" % (model_name)
