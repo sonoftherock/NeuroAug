@@ -4,8 +4,6 @@ import argparse
 import tensorflow as tf
 import numpy as np
 
-from optimizer import OptimizerVGAE, OptimizerVAE
-from model import VGAE, VAE
 from utils import normalize_adj, construct_feed_dict_VGAE, \
                     get_random_batch_VGAE, get_random_batch_VAE
 
@@ -33,6 +31,7 @@ def define_placeholders(args, data_shape):
             'dropout': tf.placeholder_with_default(0., shape=()),
             'lambd': tf.placeholder(tf.float32, [])
         }
+        
     else:
         placeholders = {}
 
@@ -67,26 +66,16 @@ def define_model_and_optimizer(args, data_shape, placeholders):
 
     return model, opt
 
-def train_VGAE(model_name, data, args):
+def train_VGAE(model_name, data, session, saver,
+                    placeholders, model, opt, args):
 
-    # Initialize session and model saver
-    session = tf.Session()
-    saver = tf.train.Saver()
+    # Normalize adjacency matrix (i.e. D^(.5)AD^(.5))
+    adj = data
+    adj_norm = normalize_adj(adj)
 
-    # Trigger debugging mode
-    if args.debug:
-        session = tf_debug.LocalCLIDebugWrapperSession(session)
-
-    # Load data and define placeholders
-    print('Loading data from: ' + args.data_dir)
-    data = np.load(args.data_dir)
-    placeholders = define_placeholders(args, data.shape)
-
-    # Create model and optimizer
-    model, opt = define_model_and_optimizer(args, data.shape, placeholders)
-    model_name = "%s_%s_%s_%s" % (args.model_type, str(args.hidden_dim_1),
-                    str(args.hidden_dim_2), str(args.hidden_dim_3))
-    model_path = "./models/%s.ckpt" % (model_name)
+    # CHANGE TO features.shape[1] LATER
+    num_nodes = adj.shape[1]
+    num_features = adj.shape[1]
 
     # Use identity matrix for feature-less training
     features_batch = np.zeros([args.batch_size, num_nodes, num_features])
@@ -107,7 +96,7 @@ def train_VGAE(model_name, data, args):
             constraint_ma = initial
         else:
             feed_dict.update({placeholders['lambd']: lambd})
-            outs = sess.run([opt.opt_op, opt.cost, opt.rc_loss, opt.kl
+            outs = sess.run([opt.opt_op, opt.cost, opt.rc_loss, opt.kl,
                                 opt.constraint], feed_dict=feed_dict)
             constraint = outs[4]
             constraint_ma = args.alpha * constraint_ma + (1 - args.alpha) * constraint
@@ -127,20 +116,25 @@ def train_VGAE(model_name, data, args):
                 save_path = saver.save(sess, model_path)
                 print('saving checkpoint at',save_path)
 
-def train_VAE(model_name, data, sess, saver, placeholders, model, opt,
-                args):
+def train_VAE(model_name, data, sess, saver,
+                placeholders, model, opt, args):
 
     for epoch in range(args.epochs):
         t = time.time()
         batch = get_random_batch_VAE(args.batch_size, data)
         if epoch == 0:
-            [initial] = sess.run([opt.constraint], feed_dict={placeholders['inputs']: batch, placeholders['dropout']: args.dropout})
+            [initial] = sess.run([opt.constraint], feed_dict={
+                            placeholders['inputs']: batch,
+                            placeholders['dropout']: args.dropout})
             lambd = 1.0
             constraint_ma = initial
         else:
-            outs = sess.run([opt.opt_op, opt.cost, opt.rc_loss, opt.kl, opt.constraint], feed_dict={placeholders['inputs']: batch, placeholders['dropout']: args.dropout,
-                placeholders['lambd']: lambd})
-            avg_cost, avg_rc_loss, avg_kl_loss, constraint = outs[1], outs[2], np.mean(outs[3]), outs[4]
+            outs = sess.run([opt.opt_op, opt.cost, opt.rc_loss, opt.kl,
+                                opt.constraint], feed_dict={
+                                placeholders['inputs']: batch,
+                                placeholders['dropout']: args.dropout,
+                                placeholders['lambd']: lambd})
+            constraint = outs[4]
             constraint_ma = args.alpha * constraint_ma + (1 - args.alpha) * constraint
             lambd = np.clip(lambd, 0, 1e20)
             lambd *= np.clip(np.exp(constraint_ma), 0.9, 1.1)

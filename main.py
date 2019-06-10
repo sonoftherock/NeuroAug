@@ -9,6 +9,8 @@ import tensorflow as tf
 import numpy as np
 from tensorflow.python import debug as tf_debug
 
+from optimizer import OptimizerVGAE, OptimizerVAE
+from model import VGAE, VAE
 from train import train_VAE, train_VGAE
 
 # Settings
@@ -32,6 +34,63 @@ args = parser.parse_args()
 print("Learning Rate: " + str(args.learning_rate))
 print("Hidden dimensions: " + str(args.hidden_dim_1), str(args.hidden_dim_2), str(args.hidden_dim_3))
 print("Augmentor model type: " + args.model_type)
+
+def define_placeholders(args, data_shape):
+
+    input_dim = data_shape[0]
+    num_nodes, num_features = data_shape[1], data_shape[1]
+
+    if args.model_type == 'VAE':
+        placeholders = {
+            'inputs': tf.placeholder(tf.float32, [args.batch_size, input_dim]),
+            'dropout': tf.placeholder_with_default(0., shape=()),
+            'lambd': tf.placeholder(tf.float32, []),
+        }
+
+    elif args.model_type == 'VGAE':
+        placeholders = {
+            'features': tf.placeholder(tf.float32, [args.batch_size, num_nodes,
+                                        num_features]),
+            'adj_norm': tf.placeholder(tf.float32, [args.batch_size, num_nodes,
+                                        num_nodes]),
+            'adj_orig': tf.placeholder(tf.float32, [args.batch_size, num_nodes,
+                                        num_nodes]),
+            'dropout': tf.placeholder_with_default(0., shape=()),
+            'lambd': tf.placeholder(tf.float32, [])
+        }
+    else:
+        placeholders = {}
+
+    return placeholders
+
+def define_model_and_optimizer(args, data_shape, placeholders):
+
+    input_dim = data_shape[0]
+    num_nodes, num_features = data_shape[1], data_shape[1]
+
+    if args.model_type == 'VAE':
+        model = VAE(placeholders, input_dim, args)
+
+        with tf.name_scope('optimizer'):
+            opt = OptimizerVAE(reconstructions=tf.reshape(model.reconstructions, [-1]),
+                               inputs=tf.reshape(placeholders['inputs'], [-1]),
+                               model=model, learning_rate=args.learning_rate,
+                               lambd=placeholders['lambd'], tolerance=0.03)
+
+    elif args.model_type == 'VGAE':
+        model = VGAE(placeholders, num_features, num_nodes, args)
+
+        with tf.name_scope('optimizer'):
+            opt = OptimizerVGAE(preds=model.reconstructions,
+                                labels=tf.reshape(placeholders['adj_orig'], [-1]),
+                                model=model, num_nodes=num_nodes,
+                                learning_rate=args.learning_rate,
+                                lambd=placeholders['lambd'], tolerance=0.1)
+
+    else:
+        model, opt = None, None
+
+    return model, opt
 
 def main():
 
