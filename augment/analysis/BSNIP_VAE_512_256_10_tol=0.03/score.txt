@@ -1,3 +1,0 @@
-average reconstruction loss: 0.000063
-Feature mean (180 * 180 features): (0.7751079998588909, 0.0)
-Feature Variance (180*180 features): (0.5311744143369576, 0.0)
