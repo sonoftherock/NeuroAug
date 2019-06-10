@@ -24,11 +24,12 @@ def construct_feed_dict_VGAE(adj_norm, adj_orig, features, dropout, placeholders
     return feed_dict
 
 def visualize_triangular(batch, idx, model_name, name):
+    batch = batch[:, :16110]
     tri = np.zeros((180, 180))
     tri[np.triu_indices(180,1)] = batch[idx]
     plt.imshow(tri, vmin=-1, vmax=1, cmap="RdBu")
     plt.colorbar()
-    plt.savefig("./plots/" + model_name[10:] + "/" + name)
+    plt.savefig("./plots/" + model_name + "/" + name)
     plt.show()
     plt.clf()
 
