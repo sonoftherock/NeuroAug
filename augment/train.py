@@ -7,7 +7,7 @@ import numpy as np
 from utils import normalize_adj, construct_feed_dict_VGAE, \
                     get_random_batch_VGAE, get_random_batch_VAE
 
-def train_VGAE(model_name, data, session, saver,
+def train_VGAE(model_path, data, session, saver,
                     placeholders, model, opt, args):
 
     # Normalize adjacency matrix (i.e. D^(.5)AD^(.5))
@@ -57,7 +57,7 @@ def train_VGAE(model_name, data, session, saver,
                 save_path = saver.save(sess, model_path)
                 print('saving checkpoint at',save_path)
 
-def train_VAE(model_name, data, sess, saver,
+def train_VAE(model_path, data, sess, saver,
                 placeholders, model, opt, args):
 
     for epoch in range(args.epochs):
@@ -89,5 +89,5 @@ def train_VAE(model_name, data, sess, saver,
                         "time=", "{:.5f}".format(time.time() - t))
 
             if epoch % 1000 == 0 and epoch != 0:
-                save_path = saver.save(sess, model_name)
+                save_path = saver.save(sess, model_path)
                 print('saving checkpoint at',save_path)

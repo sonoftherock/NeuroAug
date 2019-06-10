@@ -28,7 +28,7 @@ def visualize_triangular(batch, idx, model_name, name):
     tri[np.triu_indices(180,1)] = batch[idx]
     plt.imshow(tri, vmin=-1, vmax=1, cmap="RdBu")
     plt.colorbar()
-    plt.savefig("./plots/" + model_name[9:] + "/" + name)
+    plt.savefig("./plots/" + model_name[10:] + "/" + name)
     plt.show()
     plt.clf()
 
@@ -36,7 +36,7 @@ def visualize_matrix(batch, idx, model_name, name):
     tri = batch[idx].reshape((180,180))
     plt.imshow(tri, vmin=-1, vmax=1, cmap="RdBu")
     plt.colorbar()
-    plt.savefig("./plots/" + model_name[9:] + "/" + name)
+    plt.savefig("./plots/" + model_name[10:] + "/" + name)
     plt.clf()
 
 def visualize_latent_space_VAE(z_mean, labels, model_name):
@@ -47,7 +47,7 @@ def visualize_latent_space_VAE(z_mean, labels, model_name):
             plt.plot(z_mean[labels==0,i], z_mean[labels==0,j], 'o', label='Control', alpha=0.5)
             plt.plot(z_mean[labels==1,i], z_mean[labels==1,j], 'o', label='Schizophrenic', alpha=0.5)
     plt.legend()
-    plt.savefig('./plots/' + model_name[9:] + "/" + 'latent_space.png')
+    plt.savefig('./plots/' + model_name[10:] + "/" + 'latent_space.png')
     plt.show()
 
 def visualize_latent_space_VGAE(z_mean, labels, model_name):
@@ -60,7 +60,7 @@ def visualize_latent_space_VGAE(z_mean, labels, model_name):
                 plt.plot(z_mean[labels==0,k,i], z_mean[labels==0,k,j], 'o', label='Control', alpha=0.5)
                 plt.plot(z_mean[labels==1,k,i], z_mean[labels==1,k,j], 'o', label='Schizophrenic', alpha=0.5)
         plt.legend()
-        plt.savefig('./plots/' + model_name[9:] + "/" + 'latent_space_%i.png' %(k))
+        plt.savefig('./plots/' + model_name[10:] + "/" + 'latent_space_%i.png' %(k))
         plt.clf()
 
 def get_random_batch_VGAE(batch_size, adj, adj_norm):

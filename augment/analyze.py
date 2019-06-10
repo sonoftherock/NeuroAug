@@ -12,12 +12,12 @@ from tensorflow.python import debug as tf_debug
 from define import define_placeholders, define_model
 from train import train_VAE, train_VGAE
 from utils import visualize_triangular, visualize_matrix, \
-                            visualize_latent_space, get_random_batch, \
+                            visualize_latent_space_VAE, get_random_batch_VAE, \
                             get_consecutive_batch
 
 # Settings
 parser = argparse.ArgumentParser()
-parser.add_argument("data_dir", nargs='?', help="data directory", type=str, default="./data/BSNIP_left_full/original.npy")
+parser.add_argument("data_dir", nargs='?', help="data directory", type=str, default="../data/BSNIP_left_full/original.npy")
 parser.add_argument("model_type", help='select augmentor model type. \
                         Options: [VAE, VGAE, BrainNetCNN_VAE]', type=str)
 parser.add_argument("--hidden_dim_1", type=int, default=512)
@@ -27,10 +27,8 @@ parser.add_argument("--batch_size", nargs='?', type=int, default=32)
 parser.add_argument('--debug', help='turn on tf debugger', action="store_true")
 
 args = parser.parse_args()
-print("Learning Rate: " + str(args.learning_rate))
 print("Hidden dimensions: " + str(args.hidden_dim_1), str(args.hidden_dim_2), str(args.hidden_dim_3))
 print("Augmentor model type: " + args.model_type)
-print("Taming VAE: Lambda=%f, Alpha=%f, Tolerane=%f" % (args.lambd, args.alpha, args.tol))
 
 def analyze():
 
@@ -46,9 +44,9 @@ def analyze():
 
     # Create model and optimizer
     model = define_model(args, data.shape, placeholders)
-    model_name = "%s_%s_%s_%s" % (args.model_type, str(args.hidden_dim_1),
+    model_name = "%s_%s_%s_%s_%s" % (args.data_dir[11: -10], args.model_type, str(args.hidden_dim_1),
                     str(args.hidden_dim_2), str(args.hidden_dim_3))
-    model_path = "./models/%s.ckpt" % (model_name)
+    model_path = "../models/%s.ckpt" % (model_name)
 
     saver = tf.train.Saver()
 
@@ -59,19 +57,19 @@ def analyze():
         print("Analyzing '%s'... \nStart Time: %s" % (model_name, str(start_time)))
 
         if args.model_type == 'VAE':
-            batch = get_random_batch_VAE(args.batch_size)
+            batch = get_random_batch_VAE(args.batch_size, data)
             feed_dict={placeholders['inputs']: batch}
             [rc] = sess.run([model.reconstructions], feed_dict=feed_dict)
             [z] = sess.run([model.z], feed_dict = feed_dict)
 
             # Visualize sample full matrix of original and reconstructed batches
             for i in range(batch.shape[0]):
-                visualize_triangular(batch, i, model_name, 'original_' + str(i))
-                visualize_triangular(rc, i, model_name, 'reconstruction_' + str(i))
+                visualize_triangular(batch[:,:16110], i, model_path, 'original_' + str(i))
+                visualize_triangular(rc[:,:16110], i, model_path, 'reconstruction_' + str(i))
 
             # Visualize Latent Space. Label format =[control_bool, subject_bool]
             onehot = np.array([0 if label[0] == 1 else 1 for label in batch[-2:]])
-            visualize_latent_space(z, onehot, model_name)
+            visualize_latent_space_VAE(z, onehot, model_name)
 
         elif args.model_type == 'VGAE':
             train_VGAE(model_name, data, session, saver, placeholders,

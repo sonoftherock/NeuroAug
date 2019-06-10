@@ -51,9 +51,9 @@ def main():
     # Create model and optimizer
     model = define_model(args, data.shape, placeholders)
     opt = define_optimizer(args, model, data.shape, placeholders)
-    model_name = "%s_%s_%s_%s" % (args.model_type, str(args.hidden_dim_1),
+    model_name = "%s_%s_%s_%s_%s" % (args.data_dir[11:-10], args.model_type, str(args.hidden_dim_1),
                     str(args.hidden_dim_2), str(args.hidden_dim_3))
-    model_path = "./models/%s.ckpt" % (model_name)
+    model_path = "../models/%s.ckpt" % (model_name)
 
     saver = tf.train.Saver()
 
@@ -68,11 +68,11 @@ def main():
         print("Starting to train '%s'... \nStart Time: %s" % (model_name, str(start_time)))
 
         if args.model_type == 'VAE':
-            train_VAE(model_name, data, session, saver, placeholders,
+            train_VAE(model_path, data, session, saver, placeholders,
                         model, opt, args)
 
         elif args.model_type == 'VGAE':
-            train_VGAE(model_name, data, session, saver, placeholders,
+            train_VGAE(model_path, data, session, saver, placeholders,
                         model, opt, args)
 
     print("Training Complete. Model name: %s" %(model_name))
