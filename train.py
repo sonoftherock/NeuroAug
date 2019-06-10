@@ -4,87 +4,205 @@ import argparse
 import tensorflow as tf
 import numpy as np
 
+from optimizer import OptimizerVGAE, OptimizerVAE
+from model import VGAE, VAE
 from utils import normalize_adj, construct_feed_dict_VGAE, \
                     get_random_batch_VGAE, get_random_batch_VAE
 
-def train_VGAE(model_name, data, sess, saver, placeholders, model,
-                opt, args):
 
-    # Normalize adjacency matrix (i.e. D^(.5)AD^(.5))
-    adj = data
-    adj_norm = normalize_adj(adj)
+def define_placeholders(args, data_shape):
 
-    # CHANGE TO features.shape[1] LATER
-    num_nodes = adj.shape[1]
-    num_features = adj.shape[1]
+    input_dim = data_shape[0]
+    num_nodes, num_features = data_shape[1], data_shape[1]
 
+    if args.model_type == 'VAE':
+        placeholders = {
+            'inputs': tf.placeholder(tf.float32, [args.batch_size, input_dim]),
+            'dropout': tf.placeholder_with_default(0., shape=()),
+            'lambd': tf.placeholder(tf.float32, []),
+        }
+
+    elif args.model_type == 'VGAE':
+        placeholders = {
+            'features': tf.placeholder(tf.float32, [args.batch_size, num_nodes,
+                                        num_features]),
+            'adj_norm': tf.placeholder(tf.float32, [args.batch_size, num_nodes,
+                                        num_nodes]),
+            'adj_orig': tf.placeholder(tf.float32, [args.batch_size, num_nodes,
+                                        num_nodes]),
+            'dropout': tf.placeholder_with_default(0., shape=()),
+            'lambd': tf.placeholder(tf.float32, [])
+        }
+    else:
+        placeholders = {}
+
+    return placeholders
+
+def define_model_and_optimizer(args, data_shape, placeholders):
+
+    input_dim = data_shape[0]
+    num_nodes, num_features = data_shape[1], data_shape[1]
+
+    if args.model_type == 'VAE':
+        model = VAE(placeholders, input_dim, args)
+
+        with tf.name_scope('optimizer'):
+            opt = OptimizerVAE(reconstructions=tf.reshape(model.reconstructions, [-1]),
+                               inputs=tf.reshape(placeholders['inputs'], [-1]),
+                               model=model, learning_rate=args.learning_rate,
+                               lambd=placeholders['lambd'], tolerance=0.03)
+
+    elif args.model_type == 'VGAE':
+        model = VGAE(placeholders, num_features, num_nodes, args)
+
+        with tf.name_scope('optimizer'):
+            opt = OptimizerVGAE(preds=model.reconstructions,
+                                labels=tf.reshape(placeholders['adj_orig'], [-1]),
+                                model=model, num_nodes=num_nodes,
+                                learning_rate=args.learning_rate,
+                                lambd=placeholders['lambd'], tolerance=0.1)
+
+    else:
+        model, opt = None, None
+
+    return model, opt
+
+def train_VGAE(model_name, data, args):
+
+    # Initialize session and model saver
+    session = tf.Session()
+    saver = tf.train.Saver()
+
+    # Trigger debugging mode
+    if args.debug:
+        session = tf_debug.LocalCLIDebugWrapperSession(session)
+
+    # Load data and define placeholders
+    print('Loading data from: ' + args.data_dir)
+    data = np.load(args.data_dir)
+    placeholders = define_placeholders(args, data.shape)
+
+    # Create model and optimizer
+    model, opt = define_model_and_optimizer(args, data.shape, placeholders)
+    model_name = "%s_%s_%s_%s" % (args.model_type, str(args.hidden_dim_1),
+                    str(args.hidden_dim_2), str(args.hidden_dim_3))
     model_path = "./models/%s.ckpt" % (model_name)
 
-    # Use identity matrix for feature-less training
-    features_batch = np.zeros([args.batch_size, num_nodes, num_features])
-    for i in features_batch:
-        np.fill_diagonal(i, 1)
 
-    for epoch in range(args.epochs):
-        t = time.time()
-        random_batch = get_random_batch_VGAE(args.batch_size, adj, adj_norm)
-        adj_norm_batch, adj_orig_batch, adj_idx = random_batch
-        feed_dict = construct_feed_dict_VGAE(adj_norm_batch, adj_orig_batch,
-                                    features_batch, args.dropout, placeholders)
+    with session as sess:
+        sess.run(tf.global_variables_initializer())
 
-        if epoch == 0:
-            lambd = args.lambd
-            feed_dict.update({placeholders['lambd']: lambd})
-            [initial] = sess.run([opt.constraint], feed_dict=feed_dict)
-            constraint_ma = initial
-        else:
-            feed_dict.update({placeholders['lambd']: lambd})
-            outs = sess.run([opt.opt_op, opt.cost, opt.kl, opt.rc_loss,
-                                opt.constraint], feed_dict=feed_dict)
-            constraint = outs[4]
-            constraint_ma = args.alpha * constraint_ma + (1 - args.alpha) * constraint
-            lambd *= np.clip(np.exp(constraint_ma), 0.9, 1.1)
-            lambd = np.clip(lambd, 0, 1e20)
+        if args.restore:
+            print("Restoring model from: ", model_path)
+            saver.restore(sess, model_path)
 
-            if epoch % 100 == 0:
-                _, cost, kl_loss, rc_loss, constraint = outs
-                print("Epoch:", '%04d' % (epoch + 1), "train_loss=",
-                        "{:.5f}".format(cost), "kl_loss=%s" % (kl_loss),
-                        "rc_loss=%s" % (rc_loss), "constraint=%s" % (constraint),
-                        "lambd=%s" %(str(lambd)), "constraint_ma=%s" % (constraint_ma),
-                        "time=", "{:.5f}".format(time.time() - t))
+        start_time = time.ctime(int(time.time()))
+        print("Starting to train '%s'... \nStart Time: %s" % (model_name, str(start_time)))
 
-            # Save model every 500 epochs
-            if epoch % 500 == 0 and epoch != 0:
-                save_path = saver.save(sess, model_path)
-                print('saving checkpoint at',save_path)
+        # Normalize adjacency matrix (i.e. D^(.5)AD^(.5))
+        adj = data
+        adj_norm = normalize_adj(adj)
 
-def train_VAE(model_name, data, sess, saver, placeholders, model, opt,
-                args):
+        # CHANGE TO features.shape[1] LATER
+        num_nodes = adj.shape[1]
+        num_features = adj.shape[1]
 
-    for epoch in range(args.epochs):
-        t = time.time()
-        batch = get_random_batch_VAE(args.batch_size, data)
-        if epoch == 0:
-            [initial] = sess.run([opt.constraint], feed_dict={placeholders['inputs']: batch, placeholders['dropout']: args.dropout})
-            lambd = 1.0
-            constraint_ma = initial
-        else:
-            outs = sess.run([opt.opt_op, opt.cost, opt.rc_loss, opt.kl, opt.constraint], feed_dict={placeholders['inputs']: batch, placeholders['dropout']: args.dropout,
-                placeholders['lambd']: lambd})
-            avg_cost, avg_rc_loss, avg_kl_loss, constraint = outs[1], outs[2], np.mean(outs[3]), outs[4]
-            constraint_ma = args.alpha * constraint_ma + (1 - args.alpha) * constraint
-            lambd = np.clip(lambd, 0, 1e20)
-            lambd *= np.clip(np.exp(constraint_ma), 0.9, 1.1)
+        model_path = "./models/%s.ckpt" % (model_name)
 
-            if epoch % 100 == 0:
-                _, cost, kl_loss, rc_loss, constraint = outs
-                print("Epoch:", '%04d' % (epoch + 1), "train_loss=",
-                        "{:.5f}".format(cost), "kl_loss=%s" % (kl_loss),
-                        "rc_loss=%s" % (rc_loss), "constraint=%s" % (constraint),
-                        "lambd=%s" %(str(lambd)), "constraint_ma=%s" % (constraint_ma),
-                        "time=", "{:.5f}".format(time.time() - t))
+        # Use identity matrix for feature-less training
+        features_batch = np.zeros([args.batch_size, num_nodes, num_features])
+        for i in features_batch:
+            np.fill_diagonal(i, 1)
 
-            if epoch % 1000 == 0 and epoch != 0:
-                save_path = saver.save(sess, model_name)
-                print('saving checkpoint at',save_path)
+        for epoch in range(args.epochs):
+            t = time.time()
+            random_batch = get_random_batch_VGAE(args.batch_size, adj, adj_norm)
+            adj_norm_batch, adj_orig_batch, adj_idx = random_batch
+            feed_dict = construct_feed_dict_VGAE(adj_norm_batch, adj_orig_batch,
+                                        features_batch, args.dropout, placeholders)
+
+            if epoch == 0:
+                lambd = args.lambd
+                feed_dict.update({placeholders['lambd']: lambd})
+                [initial] = sess.run([opt.constraint], feed_dict=feed_dict)
+                constraint_ma = initial
+            else:
+                feed_dict.update({placeholders['lambd']: lambd})
+                outs = sess.run([opt.opt_op, opt.cost, opt.kl, opt.rc_loss,
+                                    opt.constraint], feed_dict=feed_dict)
+                constraint = outs[4]
+                constraint_ma = args.alpha * constraint_ma + (1 - args.alpha) * constraint
+                lambd *= np.clip(np.exp(constraint_ma), 0.9, 1.1)
+                lambd = np.clip(lambd, 0, 1e20)
+
+                if epoch % 100 == 0:
+                    _, cost, kl_loss, rc_loss, constraint = outs
+                    print("Epoch:", '%04d' % (epoch + 1), "train_loss=",
+                            "{:.5f}".format(cost), "kl_loss=%s" % (kl_loss),
+                            "rc_loss=%s" % (rc_loss), "constraint=%s" % (constraint),
+                            "lambd=%s" %(str(lambd)), "constraint_ma=%s" % (constraint_ma),
+                            "time=", "{:.5f}".format(time.time() - t))
+
+                # Save model every 500 epochs
+                if epoch % 500 == 0 and epoch != 0:
+                    save_path = saver.save(sess, model_path)
+                    print('saving checkpoint at',save_path)
+
+def train_VAE(model_name, data, args):
+
+    # Initialize session and model saver
+    session = tf.Session()
+    saver = tf.train.Saver()
+
+    # Trigger debugging mode
+    if args.debug:
+        session = tf_debug.LocalCLIDebugWrapperSession(session)
+
+    # Load data and define placeholders
+    print('Loading data from: ' + args.data_dir)
+    data = np.load(args.data_dir)
+    placeholders = define_placeholders(args, data.shape)
+
+    # Create model and optimizer
+    model, opt = define_model_and_optimizer(args, data.shape, placeholders)
+    model_name = "%s_%s_%s_%s" % (args.model_type, str(args.hidden_dim_1),
+                    str(args.hidden_dim_2), str(args.hidden_dim_3))
+    model_path = "./models/%s.ckpt" % (model_name)
+
+
+    with session as sess:
+        sess.run(tf.global_variables_initializer())
+
+        if args.restore:
+            print("Restoring model from: ", model_path)
+            saver.restore(sess, model_path)
+
+        start_time = time.ctime(int(time.time()))
+        print("Starting to train '%s'... \nStart Time: %s" % (model_name, str(start_time)))
+
+        for epoch in range(args.epochs):
+            t = time.time()
+            batch = get_random_batch_VAE(args.batch_size, data)
+            if epoch == 0:
+                [initial] = sess.run([opt.constraint], feed_dict={placeholders['inputs']: batch, placeholders['dropout']: args.dropout})
+                lambd = 1.0
+                constraint_ma = initial
+            else:
+                outs = sess.run([opt.opt_op, opt.cost, opt.rc_loss, opt.kl, opt.constraint], feed_dict={placeholders['inputs']: batch, placeholders['dropout']: args.dropout,
+                    placeholders['lambd']: lambd})
+                avg_cost, avg_rc_loss, avg_kl_loss, constraint = outs[1], outs[2], np.mean(outs[3]), outs[4]
+                constraint_ma = args.alpha * constraint_ma + (1 - args.alpha) * constraint
+                lambd = np.clip(lambd, 0, 1e20)
+                lambd *= np.clip(np.exp(constraint_ma), 0.9, 1.1)
+
+                if epoch % 100 == 0:
+                    _, cost, kl_loss, rc_loss, constraint = outs
+                    print("Epoch:", '%04d' % (epoch + 1), "train_loss=",
+                            "{:.5f}".format(cost), "kl_loss=%s" % (kl_loss),
+                            "rc_loss=%s" % (rc_loss), "constraint=%s" % (constraint),
+                            "lambd=%s" %(str(lambd)), "constraint_ma=%s" % (constraint_ma),
+                            "time=", "{:.5f}".format(time.time() - t))
+
+                if epoch % 1000 == 0 and epoch != 0:
+                    save_path = saver.save(sess, model_name)
+                    print('saving checkpoint at',save_path)
