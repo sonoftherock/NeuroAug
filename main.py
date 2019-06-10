@@ -42,7 +42,52 @@ def main():
         train_VGAE(model_name, data, args)
 
     else:
+<<<<<<< HEAD
         print('beep beep model unspecified')
+=======
+        model, opt = None, None
+
+    return model, opt
+
+def main():
+
+    # Trigger debugging mode
+    if args.debug:
+        session = tf_debug.LocalCLIDebugWrapperSession(session)
+
+    # Load data and define placeholders
+    print('Loading data from: ' + args.data_dir)
+    data = np.load(args.data_dir)
+    placeholders = define_placeholders(args, data.shape)
+
+    # Create model and optimizer
+    model, opt = define_model_and_optimizer(args, data.shape, placeholders)
+    model_name = "%s_%s_%s_%s" % (args.model_type, str(args.hidden_dim_1),
+                    str(args.hidden_dim_2), str(args.hidden_dim_3))
+    model_path = "./models/%s.ckpt" % (model_name)
+
+    # Initialize session and model saver
+    session = tf.Session()
+    saver = tf.train.Saver()
+
+    with session as sess:
+        sess.run(tf.global_variables_initializer())
+
+        if args.restore:
+            print("Restoring model from: ", model_path)
+            saver.restore(sess, model_path)
+
+        start_time = time.ctime(int(time.time()))
+        print("Starting to train '%s'... \nStart Time: %s" % (model_name, str(start_time)))
+
+        if args.model_type == 'VAE':
+            train_VAE(model_name, data, session, saver, placeholders,
+                        model, opt, args)
+
+        elif args.model_type == 'VGAE':
+            train_VGAE(model_name, data, session, saver, placeholders,
+                        model, opt, args)
+>>>>>>> parent of 0cefc6a... revert session declaration in train func commit
 
     print("Training Complete. Model name: %s" %(model_name))
 
