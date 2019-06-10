@@ -35,23 +35,8 @@ print("Augmentor model type: " + args.model_type)
 
 def main():
 
-    if args.model_type == 'VAE':
-        train_VAE(model_name, data, args)
-
-    elif args.model_type == 'VGAE':
-        train_VGAE(model_name, data, args)
-
-    else:
-<<<<<<< HEAD
-        print('beep beep model unspecified')
-=======
-        model, opt = None, None
-
-    return model, opt
-
-def main():
-
-    # Trigger debugging mode
+    # Initialize session and trigger debugging mode
+    session = tf.Session()
     if args.debug:
         session = tf_debug.LocalCLIDebugWrapperSession(session)
 
@@ -66,8 +51,6 @@ def main():
                     str(args.hidden_dim_2), str(args.hidden_dim_3))
     model_path = "./models/%s.ckpt" % (model_name)
 
-    # Initialize session and model saver
-    session = tf.Session()
     saver = tf.train.Saver()
 
     with session as sess:
@@ -87,7 +70,6 @@ def main():
         elif args.model_type == 'VGAE':
             train_VGAE(model_name, data, session, saver, placeholders,
                         model, opt, args)
->>>>>>> parent of 0cefc6a... revert session declaration in train func commit
 
     print("Training Complete. Model name: %s" %(model_name))
 

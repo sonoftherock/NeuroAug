@@ -107,7 +107,7 @@ def train_VGAE(model_name, data, args):
             constraint_ma = initial
         else:
             feed_dict.update({placeholders['lambd']: lambd})
-            outs = sess.run([opt.opt_op, opt.cost, opt.kl, opt.rc_loss,
+            outs = sess.run([opt.opt_op, opt.cost, opt.rc_loss, opt.kl
                                 opt.constraint], feed_dict=feed_dict)
             constraint = outs[4]
             constraint_ma = args.alpha * constraint_ma + (1 - args.alpha) * constraint
@@ -115,7 +115,7 @@ def train_VGAE(model_name, data, args):
             lambd = np.clip(lambd, 0, 1e20)
 
             if epoch % 100 == 0:
-                _, cost, kl_loss, rc_loss, constraint = outs
+                _, cost, rc_loss, kl_loss, constraint = outs
                 print("Epoch:", '%04d' % (epoch + 1), "train_loss=",
                         "{:.5f}".format(cost), "kl_loss=%s" % (kl_loss),
                         "rc_loss=%s" % (rc_loss), "constraint=%s" % (constraint),
@@ -146,7 +146,7 @@ def train_VAE(model_name, data, sess, saver, placeholders, model, opt,
             lambd *= np.clip(np.exp(constraint_ma), 0.9, 1.1)
 
             if epoch % 100 == 0:
-                _, cost, kl_loss, rc_loss, constraint = outs
+                _, cost, rc_loss, kl_loss, constraint = outs
                 print("Epoch:", '%04d' % (epoch + 1), "train_loss=",
                         "{:.5f}".format(cost), "kl_loss=%s" % (kl_loss),
                         "rc_loss=%s" % (rc_loss), "constraint=%s" % (constraint),
