@@ -20,6 +20,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("data_dir", help="data directory", type=str)
 parser.add_argument("model_type", help='select augmentor model type. \
                         Options: [VAE, VGAE, BrainNetCNN_VAE]', type=str)
+parser.add_argument("predict_type", help='select augmentor model type. \
+                        Options: [Classifier]', type=str)
 parser.add_argument("tol", help="tolerance for GECO procedure", type=float)
 parser.add_argument("num_batches", help='number of batches to augment by', type=int)
 parser.add_argument("--hidden_dim_1", type=int, default=512)
@@ -74,7 +76,12 @@ def augment():
 
         gen = np.array(gen_all).reshape(args.num_batches, args.batch_size, -1)
         gen = gen.reshape(-1, input_dim)
+
+        if args.predict_type == 'Classifier':
+            gen[:, 16110:] = np.clip(tf.round(gen[:, 16110:]).eval(), 0, 1)
+
         visualize_triangular(gen[:,:16110], 0, model_name, 'generated')
+        print(gen[:, 16110])
         augmented_data = np.concatenate((np.transpose(gen), train_data), axis=1)
         np.save('../data/%s_augmented_train.npy'% model_name, augmented_data)
 
