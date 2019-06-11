@@ -205,37 +205,3 @@ class VAEwithFeatures(Model):
                           act=lambda x: x,
                           dropout=self.dropout,
                           logging=self.logging)(self.decoder2)
-
-class BinaryClassifier(Model):
-    def __init__(self, placeholders, num_features, args, **kwargs):
-        super(BinaryClassifier, self).__init__(**kwargs)
-        self.inputs = placeholders['inputs']
-        self.batch_size = args.batch_size
-        self.input_dim = num_features
-        self.dropout = placeholders['dropout']
-        self.build(args)
-
-    def _build(self, args):
-        self.layer1 = HiddenLayer(input_dim=self.input_dim,
-                                              output_dim=args.hidden_dim_1,
-                                              act=tf.nn.relu,
-                                              dropout=self.dropout,
-                                              logging=self.logging)(self.inputs)
-
-        self.layer2 = HiddenLayer(input_dim=args.hidden_dim_1,
-                                       output_dim=args.hidden_dim_2,
-                                       act=tf.nn.relu,
-                                       dropout=self.dropout,
-                                       logging=self.logging)(self.layer1)
-
-        self.layer3 = HiddenLayer(input_dim=args.hidden_dim_2,
-                                          output_dim=args.hidden_dim_3,
-                                          act=tf.nn.relu,
-                                          dropout=self.dropout,
-                                          logging=self.logging)(self.layer2)
-
-        self.logits = HiddenLayer(input_dim=args.hidden_dim_3,
-                                          output_dim=2,
-                                          act=lambda x: x,
-                                          dropout=self.dropout,
-                                          logging=self.logging)(self.layer3)

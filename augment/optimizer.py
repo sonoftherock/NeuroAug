@@ -15,7 +15,7 @@ class OptimizerVAE(object):
 
         self.fc_rc_loss = tf.reduce_mean(tf.square(self.inputs - self.reconstructions))
         self.label_rc_loss = tf.reduce_mean(tf.square(self.labels - self.preds))
-        self.rc_loss = self.fc_rc_loss + self.label_rc_loss 
+        self.rc_loss = self.fc_rc_loss + self.label_rc_loss
 
         # constraint refers to MSE reconstruction loss
         self.constraint = self.rc_loss - tf.square(self.tolerance)
@@ -34,16 +34,6 @@ class OptimizerAE(object):
         self.rc_loss = tf.reduce_mean(tf.square(self.inputs - self.reconstructions))
         self.optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)  # Adam Optimizer
         self.cost = self.rc_loss
-        self.opt_op = self.optimizer.minimize(self.cost)
-        self.grads_vars = self.optimizer.compute_gradients(self.cost)
-
-class OptimizerClassifier(object):
-    def __init__(self, logits, labels, model, learning_rate):
-        self.logits = logits
-        self.labels = labels
-        cross_entropy = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits)
-        self.cost = tf.reduce_mean(cross_entropy)
-        self.optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)  # Adam Optimizer
         self.opt_op = self.optimizer.minimize(self.cost)
         self.grads_vars = self.optimizer.compute_gradients(self.cost)
 
