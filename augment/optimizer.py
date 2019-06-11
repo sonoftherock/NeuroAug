@@ -15,7 +15,7 @@ class OptimizerVAE(object):
 
         self.fc_rc_loss = tf.reduce_mean(tf.square(self.inputs - self.reconstructions))
         self.label_rc_loss = tf.reduce_mean(tf.square(self.labels - self.preds))
-        self.rc_loss = self.fc_rc_loss + self.label_rc_loss
+        self.rc_loss = self.fc_rc_loss + self.label_rc_loss 
 
         # constraint refers to MSE reconstruction loss
         self.constraint = self.rc_loss - tf.square(self.tolerance)

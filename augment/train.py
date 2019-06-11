@@ -77,7 +77,7 @@ def train_VAE(model_path, data, sess, saver,
                                 placeholders['lambd']: lambd})
             constraint = outs[4]
             constraint_ma = args.alpha * constraint_ma + (1 - args.alpha) * constraint
-            lambd = np.clip(lambd, 0, 1e20)
+            lambd = np.clip(lambd, 0, 1e15)
             lambd *= np.clip(np.exp(constraint_ma), 0.9, 1.1)
 
             if epoch % 100 == 0:

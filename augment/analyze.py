@@ -59,9 +59,10 @@ def score_VAE(args, placeholders, data, model, model_name, sess):
     while start + 32 < data.shape[1]:
         batch = get_consecutive_batch_VAE(start, args.batch_size, data)
         feed_dict={placeholders['inputs']: batch}
-        [rc] = sess.run([model.reconstructions], feed_dict=feed_dict)
+        [rc, preds] = sess.run([model.reconstructions, model.preds], feed_dict=feed_dict)
+        output = np.concatenate((rc, preds), axis=1)
 
-        tot_rc_loss += tf.reduce_mean(tf.square(batch - rc))
+        tot_rc_loss += tf.reduce_mean(tf.square(batch - output))
         start += args.batch_size
     avg_rc_loss = tot_rc_loss / math.floor(data.shape[1]/args.batch_size)
     f = open('./analysis/%s/score.txt' % (model_name), 'w')
@@ -75,7 +76,7 @@ def score_VAE(args, placeholders, data, model, model_name, sess):
 
     og = np.array(og_all).reshape(10, 32, -1)
     og = og.reshape(-1, input_dim)
-    og = og[:, :-2]
+    og = og[:, :16110]
     og_mean = np.mean(og, axis=0)
     og_var = np.var(og, axis=0)
 
@@ -87,8 +88,7 @@ def score_VAE(args, placeholders, data, model, model_name, sess):
         gen_all.append(gen)
 
     gen = np.array(gen_all).reshape(10, 32, -1)
-    gen = gen.reshape(-1, input_dim)
-    gen = gen[:,:-2]
+    gen = gen.reshape(-1, 16110)
 
     # Check one sample gen
     visualize_triangular(gen, 0, model_name, 'generated')
