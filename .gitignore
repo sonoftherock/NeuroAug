@@ -1,5 +1,6 @@
 models/
 analysis/
+data/
 *.pyc
 .ipynb_checkpoints/
 __pycache__/
