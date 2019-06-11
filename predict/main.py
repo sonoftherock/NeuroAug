@@ -10,7 +10,7 @@ import numpy as np
 from tensorflow.python import debug as tf_debug
 
 from define import define_placeholders, define_model, define_optimizer
-from train import train_Classifier, train_Predictor
+from train import train
 
 # Settings
 parser = argparse.ArgumentParser()
@@ -62,7 +62,8 @@ def main():
             saver.restore(sess, model_path)
 
         start_time = time.ctime(int(time.time()))
-        print("Starting to train '%s'... \nStart Time: %s" % (model_name, str(start_time)))
+        print("Starting to train '%s'... \nStart Time: %s" \
+                % (model_name, str(start_time)))
 
         train(model_path, data, session, saver, placeholders,
                     model, opt, args)

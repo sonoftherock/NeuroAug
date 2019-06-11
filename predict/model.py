@@ -35,7 +35,7 @@ class Model(object):
 
 class Predictor(Model):
     def __init__(self, placeholders, num_features, args, **kwargs):
-        super(BinaryClassifier, self).__init__(**kwargs)
+        super(Predictor, self).__init__(**kwargs)
         self.inputs = placeholders['inputs']
         self.batch_size = args.batch_size
         self.input_dim = num_features

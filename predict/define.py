@@ -20,10 +20,9 @@ def define_placeholders(args, data_shape):
 def define_model(args, data_shape, placeholders):
 
     input_dim = data_shape[0]
-    num_nodes, num_features = data_shape[1], data_shape[1]
 
-    if args.model_type == 'Predictor':
-        model = Predictor(placeholders, num_features, num_nodes, args)
+    if args.model_type == 'Classifier' or 'Predictor':
+        model = Predictor(placeholders, input_dim, args)
 
     else:
         model = None

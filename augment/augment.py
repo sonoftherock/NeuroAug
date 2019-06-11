@@ -72,7 +72,7 @@ def augment():
             gen = gen.reshape(args.batch_size, -1)
             gen_all.append(gen)
 
-        gen = np.array(gen_all).reshape(10, args.batch_size, -1)
+        gen = np.array(gen_all).reshape(args.num_batches, args.batch_size, -1)
         gen = gen.reshape(-1, input_dim)
         visualize_triangular(gen[:,:16110], 0, model_name, 'generated')
         augmented_data = np.concatenate((np.transpose(gen), train_data), axis=1)

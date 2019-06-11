@@ -4,8 +4,7 @@ import argparse
 import tensorflow as tf
 import numpy as np
 
-from utils import normalize_adj, construct_feed_dict_VGAE, \
-                    get_random_batch_VGAE, get_random_batch_VAE
+from utils import get_random_batch
 
 def train(model_path, data, sess, saver,
                 placeholders, model, opt, args):
