@@ -20,6 +20,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("data_dir", help="data directory", type=str)
 parser.add_argument("model_type", help='select augmentor model type. \
                         Options: [VAE, VGAE, BrainNetCNN_VAE]', type=str)
+parser.add_argument("tol", help="tolerance for GECO procedure", type=float)
 parser.add_argument("num_batches", help='number of batches to augment by', type=int)
 parser.add_argument("--hidden_dim_1", type=int, default=512)
 parser.add_argument("--hidden_dim_2", type=int, default=256)
@@ -67,8 +68,7 @@ def augment():
             randoms = np.random.normal(0.0, 1.0, (args.batch_size,
                                                     args.hidden_dim_3))
             [gen, gen_preds] = sess.run([model.reconstructions, model.preds], feed_dict={model.z: randoms})
-            import pdb; pdb.set_trace()
-            gen = np.concatenate((gen, gen_preds), axis=0)
+            gen = np.concatenate((gen, gen_preds), axis=1)
             gen = gen.reshape(args.batch_size, -1)
             gen_all.append(gen)
 
