@@ -57,26 +57,20 @@ def main():
         start, accuracy = 0, 0
         i = 0
 
-            # Get average reconstruction loss on test set
-            while start + args.batch_size <= data.shape[1]:
-                batch, labels = get_consecutive_batch(start, args.batch_size)
-                feed_dict = {placeholders['inputs']: batch}
-                outs = sess.run([model.preds], feed_dict=feed_dict)
+        # Get average reconstruction loss on test set
+        while start + args.batch_size <= data.shape[1]:
+            batch, labels = get_consecutive_batch(start, args.batch_size)
+            feed_dict = {placeholders['inputs']: batch}
+            outs = sess.run([model.preds], feed_dict=feed_dict)
 
-                if args.model_type = 'Classification':
-                    preds = tf.nn.sigmoid(outs[0])
-                    correct_pred = tf.equal(tf.round(preds), labels)
-                    accuracy += tf.reduce_mean(tf.cast(correct_pred, tf.float32))
-                    start += args.batch_size
-                    i += 1
+            if args.model_type = 'Classification':
+                preds = tf.nn.sigmoid(outs[0])
+                correct_pred = tf.equal(tf.round(preds), labels)
+                accuracy += tf.reduce_mean(tf.cast(correct_pred, tf.float32))
+                start += args.batch_size
+                i += 1
 
-                else:
-                    accuracy = tf.reduce_mean(tf.square(outs[0] - labels))
+            else:
+                accuracy += tf.reduce_mean(tf.square(outs[0] - labels))
 
-            print("total score:", accuracy.eval()/i)
-
-        else:
-    #     f = open('./scores/%s.txt' % (model_name), 'w')
-    #     print('writing scores at ./scores/%s.txt' % (model_name))
-    #     f.write("average reconstruction loss: %f" % avg_rc_loss.eval())
-    #     f.close()
+        print("total score:", accuracy.eval()/i)
