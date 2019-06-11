@@ -27,3 +27,8 @@ def get_random_batch(batch_size, data):
     batch = data[:16110,idx]
     labels = data[16110:,idx]
     return np.transpose(batch), np.transpose(labels)
+
+def get_consecutive_batch(start, batch_size, data):
+    idx = np.arange(start, start + batch_size)
+    batch = data[:,idx]
+    return np.transpose(batch)
