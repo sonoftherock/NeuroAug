@@ -11,7 +11,7 @@ def train(model_path, data, sess, saver,
 
     for epoch in range(args.epochs):
         t = time.time()
-        batch, labels = get_random_batch(args.batch_size)
+        batch, labels = get_random_batch(args.batch_size, data)
         outs = sess.run([opt.opt_op, opt.cost], feed_dict={
                             placeholders['inputs']: batch,
                             placeholders['dropout']: args.dropout,
@@ -24,5 +24,5 @@ def train(model_path, data, sess, saver,
                     "time=", "{:.3f}".format(time.time() - t))
 
         if epoch % 1000 == 0 and epoch != 0:
-            save_path = saver.save(sess, model_name)
+            save_path = saver.save(sess, model_path)
             print('saving checkpoint at',save_path)

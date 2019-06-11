@@ -7,10 +7,9 @@ from model import Predictor
 def define_placeholders(args, data_shape):
 
     input_dim = data_shape[0]
-    num_nodes, num_features = data_shape[1], data_shape[1]
 
     placeholders = {
-        'inputs': tf.placeholder(tf.float32, [args.batch_size, input_dim]),
+        'inputs': tf.placeholder(tf.float32, [args.batch_size, 16110]),
         'labels': tf.placeholder(tf.float32, [args.batch_size, input_dim - 16110]),
         'dropout': tf.placeholder_with_default(0., shape=())
     }
@@ -19,10 +18,11 @@ def define_placeholders(args, data_shape):
 
 def define_model(args, data_shape, placeholders):
 
-    input_dim = data_shape[0]
+    input_dim = 16110
+    label_dim = data_shape[0] - input_dim
 
     if args.model_type == 'Classifier' or 'Predictor':
-        model = Predictor(placeholders, input_dim, args)
+        model = Predictor(placeholders, input_dim, label_dim, args)
 
     else:
         model = None
@@ -33,7 +33,6 @@ def define_model(args, data_shape, placeholders):
 def define_optimizer(args, model, data_shape, placeholders):
 
     input_dim = data_shape[0]
-    num_nodes, num_features = data_shape[1], data_shape[1]
 
     if args.model_type == 'Classifier':
         with tf.name_scope('optimizer'):

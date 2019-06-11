@@ -21,17 +21,8 @@ def visualize_matrix(batch, idx, model_name, name):
     plt.savefig("./analysis/" + model_name + "/" + name)
     plt.clf()
 
-def get_consecutive_batch_VAE(start, batch_size, data):
-    idx = np.arange(start, start + batch_size)
-    batch = data[:,idx]
-    return np.transpose(batch)
 
 def get_random_batch(batch_size, data):
-    idx = np.random.randint(data.shape[1], size=batch_size)
-    batch = data[:,idx]
-    return np.transpose(batch)
-
-def get_random_batch(batch_size):
     idx = np.random.randint(data.shape[1], size=batch_size)
     batch = data[:16110,idx]
     labels = data[16110:,idx]

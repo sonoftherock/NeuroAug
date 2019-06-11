@@ -34,11 +34,12 @@ class Model(object):
         pass
 
 class Predictor(Model):
-    def __init__(self, placeholders, num_features, args, **kwargs):
+    def __init__(self, placeholders, num_features, num_labels, args, **kwargs):
         super(Predictor, self).__init__(**kwargs)
         self.inputs = placeholders['inputs']
         self.batch_size = args.batch_size
         self.input_dim = num_features
+        self.num_labels = num_labels
         self.dropout = placeholders['dropout']
         self.build(args)
 
@@ -62,7 +63,7 @@ class Predictor(Model):
                                           logging=self.logging)(self.layer2)
 
         self.preds = HiddenLayer(input_dim=args.hidden_dim_3,
-                                          output_dim=2,
+                                          output_dim=self.num_labels,
                                           act=lambda x: x,
                                           dropout=self.dropout,
                                           logging=self.logging)(self.layer3)

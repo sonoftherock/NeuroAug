@@ -47,9 +47,9 @@ def main():
     # Create model and optimizer
     model = define_model(args, data.shape, placeholders)
     opt = define_optimizer(args, model, data.shape, placeholders)
-    model_name = "%s_%s_%s_%s_%s_tol=%s" % (args.data_dir[8:-10], args.model_type,
+    model_name = "%s_%s_%s_%s_%s" % (args.data_dir[8:-10], args.model_type,
                         str(args.hidden_dim_1), str(args.hidden_dim_2),
-                        str(args.hidden_dim_3), str(args.tol))
+                        str(args.hidden_dim_3))
     model_path = "../models/%s.ckpt" % (model_name)
 
     saver = tf.train.Saver()

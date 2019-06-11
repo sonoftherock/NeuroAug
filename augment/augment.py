@@ -80,9 +80,8 @@ def augment():
         if args.predict_type == 'Classifier':
             gen[:, 16110:] = np.clip(tf.round(gen[:, 16110:]).eval(), 0, 1)
 
-        visualize_triangular(gen[:,:16110], 0, model_name, 'generated')
-        print(gen[:, 16110])
         augmented_data = np.concatenate((np.transpose(gen), train_data), axis=1)
-        np.save('../data/%s_augmented_train.npy'% model_name, augmented_data)
+        print('Saving augmented dataset at ../data/%s_augmented_train.npy' % (model_name))
+        np.save('../data/%s_augmented_train.npy'% (model_name), augmented_data)
 
 augment()
