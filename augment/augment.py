@@ -81,6 +81,7 @@ def augment():
             gen[:, 16110:] = np.clip(tf.round(gen[:, 16110:]).eval(), 0, 1)
 
         augmented_data = np.concatenate((np.transpose(gen), train_data), axis=1)
+        print(augmented_data.shape)
         print('Saving augmented dataset at ../data/%s_augmented_train.npy' % (model_name))
         np.save('../data/%s_augmented_train.npy'% (model_name), augmented_data)
 
