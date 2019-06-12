@@ -15,11 +15,11 @@ import matplotlib.colors as clr
 plt.switch_backend('agg')
 
 from define import define_placeholders, define_model
-from utils import visualize_triangular, visualize_matrix, visualize_latent_space_VAE,\
-                    get_random_batch_VAE, get_consecutive_batch_VAE, \
-                    construct_feed_dict_VGAE, get_random_batch_VGAE, \
-                    visualize_latent_space_VGAE
-
+from utils import visualize_triangular, visualize_matrix, normalize_adj, \
+                    visualize_latent_space_VAE, get_random_batch_VAE, \
+                    get_consecutive_batch_VAE, construct_feed_dict_VGAE,\
+                    get_random_batch_VGAE, visualize_latent_space_VGAE,\
+                    get_consecutive_batch_VGAE
 
 # Settings
 parser = argparse.ArgumentParser()
@@ -54,6 +54,12 @@ def analyze_VAE(args, placeholders, data, model, model_name, sess):
 
 def analyze_VGAE(args, placeholders, data, model, model_name, sess):
 
+    adj = data
+    adj_norm = normalize_adj(adj)
+
+    # change num_features to features shape for training with features
+    num_nodes = data.shape[1]
+    num_features = data.shape[1]
     features_batch = np.zeros([args.batch_size, num_nodes, num_features],
                                     dtype=np.float32)
 
@@ -63,12 +69,14 @@ def analyze_VGAE(args, placeholders, data, model, model_name, sess):
     adj_norm_batch, adj_orig_batch, adj_idx = get_consecutive_batch_VGAE(0,
                                                 args.batch_size, adj, adj_norm)
     features = features_batch
-    feed_dict = construct_feed_dict(adj_norm_batch, adj_orig_batch, features, placeholders)
-    feed_dict.update({placeholders['dropout']: args.dropout})
+    feed_dict = construct_feed_dict_VGAE(adj_norm_batch, adj_orig_batch, features,
+            0.0, placeholders)
     outs = sess.run([model.reconstructions, model.z_mean], feed_dict=feed_dict)
 
     reconstructions = outs[0].reshape([args.batch_size, 180, 180])
     z_mean = outs[1]
+    rc = tf.reduce_mean(tf.square(adj_orig_batch - reconstructions))
+    print(rc.eval())
 
     # Visualize sample full matrix of original,
     # normalized, and reconstructed batches.
@@ -83,7 +91,7 @@ def analyze_VGAE(args, placeholders, data, model, model_name, sess):
                                                 args.batch_size, adj, adj_norm)
         features = features_batch
         feed_dict = construct_feed_dict_VGAE(adj_norm_batch, adj_orig_batch,
-                                                features, placeholders)
+                                                features, 0.0, placeholders)
         outs = sess.run([model.reconstructions, model.z_mean], feed_dict=feed_dict)
         idx_all.append(adj_idx)
         z_all.append(outs[1])
