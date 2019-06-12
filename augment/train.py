@@ -7,7 +7,7 @@ import numpy as np
 from utils import normalize_adj, construct_feed_dict_VGAE, \
                     get_random_batch_VGAE, get_random_batch_VAE
 
-def train_VGAE(model_path, data, session, saver,
+def train_VGAE(model_path, data, sess, saver,
                     placeholders, model, opt, args):
 
     # Normalize adjacency matrix (i.e. D^(.5)AD^(.5))

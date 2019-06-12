@@ -3,7 +3,7 @@ import os
 import argparse
 
 # Using Tesla K80 on Yale CS cluster (tangra)
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
 import tensorflow as tf
 import numpy as np

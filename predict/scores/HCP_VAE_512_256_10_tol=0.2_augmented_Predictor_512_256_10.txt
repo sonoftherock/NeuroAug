@@ -1,1 +1,1 @@
-Score on ../data/HCP_test.npy: 178.451005
+Score on ../data/HCP_test.npy: 177.272269
