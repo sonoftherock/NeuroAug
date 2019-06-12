@@ -102,6 +102,51 @@ def analyze_VGAE(args, placeholders, data, model, model_name, sess):
     onehot = np.array([0 if i < 203 else 1 for i in idx_all[0]])
     visualize_latent_space_VGAE(z_all[0], onehot, model_name)
 
+def score_VGAE(args, placeholders, data, model, model_name, sess):
+
+    # Features (Identity matrix)
+    features_batch = np.zeros([args.batch_size, num_nodes, num_features], dtype=np.float32)
+    for i in features_batch:
+        np.fill_diagonal(i, 1.)
+
+    start, tot_rc_loss = 0, 0
+    og, gen_all = [], []
+
+    # Get average reconstruction loss on first 353 subjects
+    while start + 32 < adj.shape[0]:
+        adj_norm_batch, adj_orig_batch, adj_idx = get_consecutive_batch(start, args.batch_size, adj, adj_norm)
+        og.append(adj_orig_batch)
+        features = features_batch
+        feed_dict = construct_feed_dict(adj_norm_batch, adj_orig_batch, features, placeholders)
+        feed_dict.update({placeholders['dropout']: args.dropout})
+        outs = sess.run([model.reconstructions, model.z_mean], feed_dict=feed_dict)
+
+        reconstructions = outs[0].reshape([args.batch_size, 180, 180])
+        tot_rc_loss += tf.reduce_mean(tf.square(adj_orig_batch - reconstructions))
+        start += args.batch_size
+
+    avg_rc_loss = tot_rc_loss / math.floor(adj.shape[0]/args.batch_size)
+
+    f = open('./analysis/%s/score.txt' % (model_name), 'w')
+
+    print('Writing scores at ./analysis/%s/score.txt' % (model_name))
+    f.write("average reconstruction loss: %f\n" % avg_rc_loss.eval())
+
+    og = np.array(og).reshape(11, 32, -1)
+    og = og.reshape(-1, 32400)
+
+    # TODO: Get pearson coefficients of first and second moments (Only for variational models) - make sure latent space is N(0,0.1)?
+    for i in range(11):
+        randoms = [np.random.normal(0, 1.0, (num_nodes, args.hidden_dim_3)) for _ in range(args.batch_size)]
+        [gen] = sess.run([model.reconstructions], feed_dict={model.z: randoms})
+        gen = gen.reshape(args.batch_size, -1)
+        gen_all.append(gen)
+    gen = np.array(gen_all).reshape(11, 32, -1)
+    gen = gen.reshape(-1, 32400)
+
+    visualize_matrix(gen, 0, model_name, 'generated')
+    moments_analysis(og, gen, f)
+
 def score_VAE(args, placeholders, data, model, model_name, sess):
     start, tot_rc_loss = 0, 0
     og_all, gen_all = [], []
@@ -129,8 +174,6 @@ def score_VAE(args, placeholders, data, model, model_name, sess):
     og = np.array(og_all).reshape(10, 32, -1)
     og = og.reshape(-1, input_dim)
     og = og[:, :16110]
-    og_mean = np.mean(og, axis=0)
-    og_var = np.var(og, axis=0)
 
     # TODO: Get pearson coefficients of first and second moments (Only for variational models) - make sure latent space is N(0,0.1)?
     for i in range(10):
@@ -144,7 +187,12 @@ def score_VAE(args, placeholders, data, model, model_name, sess):
 
     # Check one sample gen
     visualize_triangular(gen, 0, model_name, 'generated')
+    moments_analysis(og, gen, f)
 
+def moments_analysis(og, gen, f):
+
+    og_mean = np.mean(og, axis=0)
+    og_var = np.var(og, axis=0)
     gen_mean = np.mean(gen, axis=0)
     gen_var = np.var(gen, axis=0)
 
@@ -165,6 +213,7 @@ def score_VAE(args, placeholders, data, model, model_name, sess):
     f.write("Feature mean (180 * 180 features): %s\n" %(str(sp.pearsonr(og_mean, gen_mean))))
     f.write("Feature Variance (180*180 features): %s\n" %(str(sp.pearsonr(og_var, gen_var))))
     f.close()
+
 
 def analyze():
 
