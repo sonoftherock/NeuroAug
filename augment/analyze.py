@@ -69,8 +69,8 @@ def analyze_VGAE(args, placeholders, data, model, model_name, sess):
     adj_norm_batch, adj_orig_batch, adj_idx = get_consecutive_batch_VGAE(0,
                                                 args.batch_size, adj, adj_norm)
     features = features_batch
-    feed_dict = construct_feed_dict_VGAE(adj_norm_batch, adj_orig_batch, features,
-            0.0, placeholders)
+    feed_dict = construct_feed_dict_VGAE(adj_norm_batch, adj_orig_batch,
+                                            features, 0.0, placeholders)
     outs = sess.run([model.reconstructions, model.z_mean], feed_dict=feed_dict)
 
     reconstructions = outs[0].reshape([args.batch_size, 180, 180])
@@ -114,11 +114,12 @@ def score_VGAE(args, placeholders, data, model, model_name, sess):
 
     # Get average reconstruction loss on first 353 subjects
     while start + 32 < adj.shape[0]:
-        adj_norm_batch, adj_orig_batch, adj_idx = get_consecutive_batch(start, args.batch_size, adj, adj_norm)
+        adj_norm_batch, adj_orig_batch, adj_idx = get_consecutive_batch_VGAE(0,
+                                                    args.batch_size, adj, adj_norm)
         og.append(adj_orig_batch)
         features = features_batch
-        feed_dict = construct_feed_dict(adj_norm_batch, adj_orig_batch, features, placeholders)
-        feed_dict.update({placeholders['dropout']: args.dropout})
+        feed_dict = construct_feed_dict_VGAE(adj_norm_batch, adj_orig_batch,
+                                                features, 0.0, placeholders)
         outs = sess.run([model.reconstructions, model.z_mean], feed_dict=feed_dict)
 
         reconstructions = outs[0].reshape([args.batch_size, 180, 180])
@@ -135,12 +136,13 @@ def score_VGAE(args, placeholders, data, model, model_name, sess):
     og = np.array(og).reshape(11, 32, -1)
     og = og.reshape(-1, 32400)
 
-    # TODO: Get pearson coefficients of first and second moments (Only for variational models) - make sure latent space is N(0,0.1)?
-    for i in range(11):
+    # Generate 10 sampled batches
+    for i in range(10):
         randoms = [np.random.normal(0, 1.0, (num_nodes, args.hidden_dim_3)) for _ in range(args.batch_size)]
         [gen] = sess.run([model.reconstructions], feed_dict={model.z: randoms})
         gen = gen.reshape(args.batch_size, -1)
         gen_all.append(gen)
+
     gen = np.array(gen_all).reshape(11, 32, -1)
     gen = gen.reshape(-1, 32400)
 
