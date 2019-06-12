@@ -15,9 +15,11 @@ import matplotlib.colors as clr
 plt.switch_backend('agg')
 
 from define import define_placeholders, define_model
-from utils import visualize_triangular, visualize_matrix, \
-                            visualize_latent_space_VAE, get_random_batch_VAE, \
-                            get_consecutive_batch_VAE
+from utils import visualize_triangular, visualize_matrix, visualize_latent_space_VAE,\
+                    get_random_batch_VAE, get_consecutive_batch_VAE, \
+                    construct_feed_dict_VGAE, get_random_batch_VGAE, \
+                    visualize_latent_space_VGAE
+
 
 # Settings
 parser = argparse.ArgumentParser()
@@ -49,6 +51,48 @@ def analyze_VAE(args, placeholders, data, model, model_name, sess):
     # Visualize Latent Space. Label format =[control_bool, subject_bool]
     onehot = np.array([0 if label[0] == 1 else 1 for label in batch[:,-2:]])
     visualize_latent_space_VAE(z, onehot, model_name)
+
+def analyze_VGAE(args, placeholders, data, model, model_name, sess):
+
+    features_batch = np.zeros([args.batch_size, num_nodes, num_features],
+                                    dtype=np.float32)
+
+    for i in features_batch:
+        np.fill_diagonal(i, 1.)
+
+    adj_norm_batch, adj_orig_batch, adj_idx = get_consecutive_batch_VGAE(0,
+                                                args.batch_size, adj, adj_norm)
+    features = features_batch
+    feed_dict = construct_feed_dict(adj_norm_batch, adj_orig_batch, features, placeholders)
+    feed_dict.update({placeholders['dropout']: args.dropout})
+    outs = sess.run([model.reconstructions, model.z_mean], feed_dict=feed_dict)
+
+    reconstructions = outs[0].reshape([args.batch_size, 180, 180])
+    z_mean = outs[1]
+
+    # Visualize sample full matrix of original,
+    # normalized, and reconstructed batches.
+    for i in range(adj_orig_batch.shape[0]):
+        visualize_matrix(adj_orig_batch, i, model_name, 'original_' + str(i))
+        visualize_matrix(adj_norm_batch, i, model_name, 'normalized_' + str(i))
+        visualize_matrix(reconstructions, i, model_name, 'reconstruction_' + str(i))
+
+    idx_all, z_all = [], []
+    for i in range(10):
+        adj_norm_batch, adj_orig_batch, adj_idx = get_random_batch_VGAE( \
+                                                args.batch_size, adj, adj_norm)
+        features = features_batch
+        feed_dict = construct_feed_dict_VGAE(adj_norm_batch, adj_orig_batch,
+                                                features, placeholders)
+        outs = sess.run([model.reconstructions, model.z_mean], feed_dict=feed_dict)
+        idx_all.append(adj_idx)
+        z_all.append(outs[1])
+
+    # Visualize Latent Space
+    z = np.array(z_all).reshape(-1, 10)
+    idx = np.array(idx_all).flatten()
+    onehot = np.array([0 if i < 203 else 1 for i in idx_all[0]])
+    visualize_latent_space_VGAE(z_all[0], onehot, model_name)
 
 def score_VAE(args, placeholders, data, model, model_name, sess):
     start, tot_rc_loss = 0, 0
@@ -145,7 +189,6 @@ def analyze():
             score_VAE(args, placeholders, data, model, model_name, sess)
 
         elif args.model_type == 'VGAE':
-            train_VGAE(model_name, data, session, saver, placeholders,
-                        model, opt, args)
+            analyze_VGAE(args, placeholders, data, model, model_name, sess)
 
 analyze()
