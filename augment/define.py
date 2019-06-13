@@ -27,6 +27,7 @@ def define_placeholders(args, data_shape):
             'dropout': tf.placeholder_with_default(0., shape=()),
             'lambd': tf.placeholder(tf.float32, [])
         }
+        
     else:
         placeholders = {}
 

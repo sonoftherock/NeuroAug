@@ -41,8 +41,8 @@ def train_VGAE(model_path, data, sess, saver,
                                 opt.constraint], feed_dict=feed_dict)
             constraint = outs[4]
             constraint_ma = args.alpha * constraint_ma + (1 - args.alpha) * constraint
-            lambd *= np.clip(np.exp(constraint_ma), 0.9, 1.1)
             lambd = np.clip(lambd, 0, 1e20)
+            lambd *= np.clip(np.exp(constraint_ma), 0.9, 1.1)
 
             if epoch % 100 == 0:
                 _, cost, rc_loss, kl_loss, constraint = outs
@@ -67,7 +67,7 @@ def train_VAE(model_path, data, sess, saver,
             [initial] = sess.run([opt.constraint], feed_dict={
                             placeholders['inputs']: batch,
                             placeholders['dropout']: args.dropout})
-            lambd = 1.0
+            lambd = args.lambd
             constraint_ma = initial
         else:
             outs = sess.run([opt.opt_op, opt.cost, opt.rc_loss, opt.kl,

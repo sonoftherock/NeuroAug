@@ -76,11 +76,10 @@ def analyze_VGAE(args, placeholders, data, model, model_name, sess):
     reconstructions = outs[0].reshape([args.batch_size, 180, 180])
     z_mean = outs[1]
     rc = tf.reduce_mean(tf.square(adj_orig_batch - reconstructions))
-    print(rc.eval())
 
-    # Visualize sample full matrix of original,
+    # Visualize first ten full matrices of original,
     # normalized, and reconstructed batches.
-    for i in range(adj_orig_batch.shape[0]):
+    for i in range(10):
         visualize_matrix(adj_orig_batch, i, model_name, 'original_' + str(i))
         visualize_matrix(adj_norm_batch, i, model_name, 'normalized_' + str(i))
         visualize_matrix(reconstructions, i, model_name, 'reconstruction_' + str(i))
@@ -90,6 +89,8 @@ def analyze_VGAE(args, placeholders, data, model, model_name, sess):
         adj_norm_batch, adj_orig_batch, adj_idx = get_random_batch_VGAE( \
                                                 args.batch_size, adj, adj_norm)
         features = features_batch
+
+        # Meaningless placeholder for dropout (0.0)
         feed_dict = construct_feed_dict_VGAE(adj_norm_batch, adj_orig_batch,
                                                 features, 0.0, placeholders)
         outs = sess.run([model.reconstructions, model.z_mean], feed_dict=feed_dict)

@@ -6,8 +6,8 @@ import numpy as np
 
 def normalize_adj(adj):
     # Account for negative connectivity values
-    adj = np.abs(adj)
-    rowsum = np.array(adj.sum(2))
+    adj_abs = np.abs(adj)
+    rowsum = np.array(adj_abs.sum(2))
     adj_norm = np.zeros(adj.shape, np.float32)
     for i in range(rowsum.shape[0]):
         degree_mat_inv_sqrt = np.diag(np.sign(rowsum[i])*np.power(np.abs(rowsum[i]), -0.5).flatten())
